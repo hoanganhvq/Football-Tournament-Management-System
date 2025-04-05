@@ -1,0 +1,69 @@
+{
+  "name": "ftms_frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@cloudinary/react": "^1.14.1",
+    "@cloudinary/url-gen": "^1.21.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@headlessui/react": "^1.7.15",
+    "@heroicons/react": "^2.0.18",
+    "@mui/material": "^5.14.5",
+    "@mui/styled-engine-sc": "^5.12.0",
+    "@mui/x-date-pickers": "^6.11.2",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.8.2",
+    "dayjs": "^1.11.9",
+    "framer-motion": "^12.4.7",
+    "libphonenumber-js": "^1.10.39",
+    "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-color": "^2.19.3",
+    "react-dom": "^18.2.0",
+    "react-flags-select": "^2.2.3",
+    "react-icons": "^5.4.0",
+    "react-phone-input-2": "^2.15.1",
+    "react-phone-number-input": "^3.3.2",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^6.14.2",
+    "react-scripts": "5.0.1",
+    "react-time-picker": "^6.5.0",
+    "react-toastify": "^11.0.5",
+    "styled-components": "^5.3.11",
+    "sweetalert2": "^11.17.2",
+    "tw-elements": "^1.0.0-beta3",
+    "tw-elements-react": "^1.0.0-alpha1",
+    "web-vitals": "^2.1.4"
+  },
+  "proxy": "http://localhost:5000",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.3"
+  }
+}

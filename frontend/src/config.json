@@ -1,0 +1,5 @@
+{
+  "api": "https://ftmsapi.pythonanywhere.com",
+  "apiEndpoint": "https://ftmsapi.pythonanywhere.com/tournaments",
+  "clubAPI": "https://ftmsapi.pythonanywhere.com/clubs"
+}
