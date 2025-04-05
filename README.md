@@ -28,6 +28,7 @@ This system allows users to organize and manage football tournaments, including 
 - State about tournament and team
 
 ## Installation
+
 ### Clone the repository:
     ```bash
     git clone https://github.com/hoanganhvq/Football-Tournament-Management-System.git
@@ -40,8 +41,6 @@ This system allows users to organize and manage football tournaments, including 
 - Git 
 
 ### Backend Installation
-
-
 
 1. Install backend dependencies:
     ```bash
@@ -57,7 +56,6 @@ This system allows users to organize and manage football tournaments, including 
     CLOUDINARY_CLOUD_NAME =your_cloudinary_name
     CLOUDINARY_API_KEY = your_cloudinary_api_key
     CLOUDINARY_API_SECRET = your_cloudinary_api_secret
-
     ```
 
 3. Start the application:
@@ -87,7 +85,7 @@ This system allows users to organize and manage football tournaments, including 
 - **/controllers**: Contains the business logic.
 - **/middleware**: Middleware for authentication and access control.
 - **/config**: Configuration for database connection, authentication, etc.
-- uploads**: It is folder to save temporary images
+- **/uploads**: Folder to save temporary images.
 
 ### Frontend
 
@@ -109,7 +107,7 @@ This system allows users to organize and manage football tournaments, including 
 - Express.js
 - MongoDB (or another database)
 - JWT (JSON Web Token) for authentication
-- Cloundinary
+- Cloudinary for image uploads
 
 ### Frontend:
 - React.js
@@ -118,7 +116,6 @@ This system allows users to organize and manage football tournaments, including 
 
 ### DevOps:
 - Docker (if applicable)
-
 
 ## License
 
