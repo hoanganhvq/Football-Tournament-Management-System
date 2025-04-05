@@ -25,48 +25,49 @@ This system allows users to organize and manage football tournaments, including 
 - Team management
 - Match scheduling and tracking
 - Results and ranking management
+- State about tournament and team
 
 ## Installation
+### Clone the repository:
+    ```bash
+    git clone https://github.com/hoanganhvq/Football-Tournament-Management-System.git
+    ```
 
 ### Requirements
 
 - Node.js (version 14.x or higher)
-- MongoDB (or other NoSQL database, depending on your design)
-- Git (if you want to contribute)
+- MongoDB 
+- Git 
 
 ### Backend Installation
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/username/football-tournament-management.git
-    ```
 
-2. Install backend dependencies:
+
+1. Install backend dependencies:
     ```bash
     cd backend
     npm install
     ```
 
-3. Configure environment variables (`.env`):  
+2. Configure environment variables (`.env`):  
     Create a `.env` file in the `backend` folder and add the necessary environment variables like:
     ```env
-    DB_URI=mongodb://localhost:27017/football_tournament
+    MONGO_URI =mongodb://localhost:27017/football_tournament
     JWT_SECRET=your_jwt_secret_key
+    CLOUDINARY_CLOUD_NAME =your_cloudinary_name
+    CLOUDINARY_API_KEY = your_cloudinary_api_key
+    CLOUDINARY_API_SECRET = your_cloudinary_api_secret
+
     ```
 
-4. Start the application:
+3. Start the application:
     ```bash
     npm start
     ```
 
 ### Frontend Installation
 
-1. Clone the frontend repository:
-    ```bash
-    git clone https://github.com/username/football-tournament-frontend.git
-    ```
-
-2. Install frontend dependencies:
+1. Install frontend dependencies:
     ```bash
     cd frontend
     npm install
@@ -86,18 +87,19 @@ This system allows users to organize and manage football tournaments, including 
 - **/controllers**: Contains the business logic.
 - **/middleware**: Middleware for authentication and access control.
 - **/config**: Configuration for database connection, authentication, etc.
+- uploads**: It is folder to save temporary images
 
 ### Frontend
 
 - **/src**: Contains the source code for the React application.
 - **/components**: UI components.
 - **/pages**: Pages of the application (e.g., home, registration, login).
-- **/services**: Services for making API calls to the backend.
+- **/api**: Services for making API calls to the backend.
 
 ## Usage
 
 1. **Create a User Account**: Register and log in to the system to manage tournaments, teams, and players.
-2. **Create a Tournament**: Admin can create a new tournament, add teams, and schedule matches.
+2. **Create a Tournament**: User can create a new tournament, add teams, and schedule matches.
 3. **Join a Tournament**: Teams can participate in tournaments and track match results.
 
 ## Technologies Used
@@ -107,6 +109,7 @@ This system allows users to organize and manage football tournaments, including 
 - Express.js
 - MongoDB (or another database)
 - JWT (JSON Web Token) for authentication
+- Cloundinary
 
 ### Frontend:
 - React.js
@@ -116,13 +119,6 @@ This system allows users to organize and manage football tournaments, including 
 ### DevOps:
 - Docker (if applicable)
 
-## Contributing
-
-1. Fork this repository to your own account.
-2. Create a new branch (`git checkout -b feature-name`).
-3. Make your changes and commit (`git commit -am 'Add new feature'`).
-4. Push the branch to GitHub (`git push origin feature-name`).
-5. Open a Pull Request to submit your changes.
 
 ## License
 
