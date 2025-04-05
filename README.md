@@ -30,9 +30,9 @@ This system allows users to organize and manage football tournaments, including 
 ## Installation
 
 ### Clone the repository:
-    ```bash
+    
     git clone https://github.com/hoanganhvq/Football-Tournament-Management-System.git
-    ```
+
 
 ### Requirements
 
