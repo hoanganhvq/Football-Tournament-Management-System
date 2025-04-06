@@ -169,27 +169,30 @@ function ClubForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-10">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-8">
+                        {/* Club Image - Full-width banner */}
                         <div className="space-y-4">
-                            <label className="text-base font-semibold text-gray-300">Club Image *</label>
+                            <label className="text-base font-semibold text-gray-300">Club Image (Team Banner) *</label>
                             <div className="relative h-80 w-full rounded-lg border-2 border-dashed border-gray-600 bg-gray-700/50 hover:bg-gray-600/50 shadow-inner transition-all duration-300 flex items-center justify-center overflow-hidden group">
                                 {clubData.imagePreview ? (
                                     <img src={clubData.imagePreview} alt="Club Preview" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                                 ) : (
-                                    <span className="text-gray-400 text-lg font-medium">Drop or Click to Upload</span>
+                                    <span className="text-gray-400 text-lg font-medium">Drop or Click to Upload Team Banner</span>
                                 )}
                                 <input type="file"
                                     className="absolute inset-0 opacity-0 cursor-pointer"
                                     onChange={handleImageChange} />
                             </div>
                         </div>
+
+                        {/* Club Logo - Smaller, centered */}
                         <div className="space-y-4">
                             <label className="text-base font-semibold text-gray-300">Club Logo *</label>
-                            <div className="relative h-48 w-full rounded-lg border-2 border-dashed border-gray-600 bg-gray-700/50 hover:bg-gray-600/50 shadow-inner transition-all duration-300 flex items-center justify-center overflow-hidden group">
+                            <div className="relative h-48 w-48 mx-auto rounded-lg border-2 border-dashed border-gray-600 bg-gray-700/50 hover:bg-gray-600/50 shadow-inner transition-all duration-300 flex items-center justify-center overflow-hidden group">
                                 {clubData.logoPreview ? (
-                                    <img src={clubData.logoPreview} alt="Club Logo" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                    <img src={clubData.logoPreview} alt="Club Logo" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
                                 ) : (
-                                    <span className="text-gray-400 text-lg font-medium">Drop or Click to Upload</span>
+                                    <span className="text-gray-400 text-lg font-medium text-center">Drop or Click to Upload Logo</span>
                                 )}
                                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleLogoChange} />
                             </div>
