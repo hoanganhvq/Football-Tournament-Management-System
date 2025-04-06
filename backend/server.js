@@ -13,7 +13,7 @@ const app = express();
 // ⚠️ Cho phép frontend (localhost:3000) gọi API
 // CORS will make the API accessible from the frontend
 app.use(cors({
-  origin: 'https://football-tournament-management-system.vercel.app/',
+  origin: 'https://football-tournament-management-system.vercel.app',
   credentials: true,
 }));
 //Midldleware
