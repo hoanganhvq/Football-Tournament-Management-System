@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // const API_URL = 'http://localhost:5000/api/player';
 
-const API_URL = `${process.env.API_URL}/api/player`;
+const API_URL = `https://football-tournament-management-system.onrender.com/api/player`;
 
 export const getPlayer = async () =>{
     try{

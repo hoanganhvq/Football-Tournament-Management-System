@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.API_URL;
+const API_URL = 'https://football-tournament-management-system.onrender.com';
 
 export const uploadImageTournamentAndPlayer = async (id, image) => {
     console.log("req body: ",image);
