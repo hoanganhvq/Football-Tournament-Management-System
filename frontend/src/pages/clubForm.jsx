@@ -27,7 +27,7 @@ function ClubForm() {
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [currentColorIndex, setCurrentColorIndex] = useState(0);
     const colorPickerRef = useRef(null);
-    const [isSubmitting, setIsSubmiting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const hideErrorContainer = () => {
         const errorContainer = document.getElementById('error-container');
@@ -60,7 +60,7 @@ function ClubForm() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmiting(true);
+        setIsSubmitting(true);
         try {
             const id = `club_${Date.now()}`;
             let imageUrl = '';
@@ -82,7 +82,7 @@ function ClubForm() {
                 logo: logoUrl,
             };
 
-            console.log("Club Payload: ", JSON.stringify(clubPayload, null, 2)); // In dữ liệu gửi đi
+            console.log("Club Payload: ", JSON.stringify(clubPayload, null, 2));
             const token = localStorage.getItem('token');
             await createTeam(clubPayload, token);
 
@@ -116,9 +116,8 @@ function ClubForm() {
                     error.response?.data?.message || 'An error occurred. Please try again.';
                 document.getElementById('error-container').style.display = 'flex';
             }
-        }
-        finally {
-            setIsSubmiting(false);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -176,11 +175,11 @@ function ClubForm() {
                                 {clubData.imagePreview ? (
                                     <img src={clubData.imagePreview} alt="Club Preview" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                                 ) : (
-                                    <span className="text-gray-400 text-lg font-medium">Drop or Click to Upload</span>
+                                    <span className="text-gray-400 text-lg font-medium">Drop or Click to Upload (Recommended: 600x300px)</span>
                                 )}
                                 <input type="file"
-                                 className="absolute inset-0 opacity-0 cursor-pointer" 
-                                onChange={handleImageChange} />
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={handleImageChange} />
                             </div>
                         </div>
                         <div className="space-y-4">
@@ -243,7 +242,7 @@ function ClubForm() {
                                 name="phone"
                                 value={clubData.phone}
                                 onChange={handleChange}
-                                placeholder="Enter number phone..."
+                                placeholder="Enter phone number..."
                                 className="w-full p-4 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300"
                                 required
                             />

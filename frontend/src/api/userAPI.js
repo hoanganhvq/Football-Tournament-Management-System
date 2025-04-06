@@ -31,12 +31,14 @@ export const getMe = async () => {
       const res = await axios.get(`${API_URL}/me`, {
         withCredentials: true,
       });
+      console.log("Response:", res.data);  // Log kết quả API
       return res.data;
     } catch (error) {
       console.error("Error fetching user data:", error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Failed to fetch user data");
     }
   };
+  
 
   export const updateProfile = async(userData)=>{
     try {

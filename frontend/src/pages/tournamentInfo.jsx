@@ -54,29 +54,29 @@ const TournamentInformation = () => {
   const addTeam = async (teamData) => {
     try {
       await addTeamToTournament(teamData);
-      alert("Register success");
+      alert("Registration successful!");
       setIsTeamRegistered(true);
       fetchTournament();
       fetchTeamAttending();
     } catch (error) {
       console.log('Error', error);
       if (error.response?.data?.message === "Team is already registered in this tournament") {
-        alert("Your team already register!");
+        alert("Your team is already registered!");
         setIsTeamRegistered(true);
       } else {
-        alert("Don't have any slot. See you later !")
+        alert("No slots available. See you next time!");
       }
     }
   };
 
   const handleRegister = () => {
     if (!myTeam) {
-      alert("Please create team first!");
+      alert("Please create a team first!");
       navigate("/new-club");
       return;
     }
 
-    if (window.confirm("Bạn có chắc chắn muốn đăng ký giải đấu này không?")) {
+    if (window.confirm("Are you sure you want to register for this tournament?")) {
       const teamData = {
         teamId: myTeam,
         tournamentId: tournament._id,
@@ -94,7 +94,7 @@ const TournamentInformation = () => {
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
         hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((difference / (1000 * 60)) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
+        seconds: Math.floor((difference / (1000 * 60)) % 60),
       };
     }
     return {};
@@ -134,13 +134,13 @@ const TournamentInformation = () => {
         {timeLeft[interval] || 0}
       </span>
       <span className="text-xs uppercase text-gray-300 tracking-wider">
-        {interval === "days" ? "Ngày" : interval === "hours" ? "Giờ" : interval === "minutes" ? "Phút" : "Giây"}
+        {interval}
       </span>
     </div>
   ));
 
   if (loading || !tournament) {
-    return <LoadingScreen message="Đang tải thông tin giải đấu..." />;
+    return <LoadingScreen message="Loading tournament information..." />;
   }
 
   return (
@@ -151,7 +151,7 @@ const TournamentInformation = () => {
           <img
             src={tournament.logo}
             alt="Tournament Banner"
-            className="w-full h-80 object-cover border-b-4 border-blue-500 shadow-xl" // Tăng h-64 lên h-80
+            className="w-full h-96 object-cover border-b-4 border-blue-500 shadow-xl" // Tăng từ h-80 lên h-96
           />
           <h1 className="mt-6 text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase tracking-tight py-4">
             {tournament.name}
@@ -170,16 +170,16 @@ const TournamentInformation = () => {
         <div className="p-8">
           <div className="bg-gray-700/70 rounded-2xl p-6 shadow-xl border border-gray-600/30">
             <p className="text-center text-gray-200 mb-4">
-              Hạn đăng ký:{" "}
+              Registration Deadline:{" "}
               <span className="font-semibold text-blue-400">
-                {new Date(tournament.time_start).toLocaleDateString("vi-VN")}
+                {new Date(tournament.time_start).toLocaleDateString("en-US")}
               </span>
             </p>
             <div className="flex justify-center gap-6 mb-6">
               {timerComponents.length ? (
                 timerComponents
               ) : (
-                <span className="text-blue-400 font-bold text-xl">Giải đấu đã bắt đầu!</span>
+                <span className="text-blue-400 font-bold text-xl">Tournament has started!</span>
               )}
             </div>
             {!isTeamRegistered && (
@@ -187,12 +187,12 @@ const TournamentInformation = () => {
                 onClick={handleRegister}
                 className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-md"
               >
-                Đăng Ký Ngay
+                Register Now
               </button>
             )}
             {isTeamRegistered && (
               <p className="text-center text-blue-400 font-semibold">
-                Đội của bạn đã đăng ký giải đấu này!
+                Your team is already registered for this tournament!
               </p>
             )}
           </div>
@@ -206,7 +206,7 @@ const TournamentInformation = () => {
                   : "text-gray-300 hover:text-white hover:bg-blue-500/50"
                 }`}
             >
-              <FaInfoCircle className="inline mr-2" /> Thông Tin
+              <FaInfoCircle className="inline mr-2" /> Details
             </button>
             <button
               onClick={() => setActiveTab("teams")}
@@ -215,7 +215,7 @@ const TournamentInformation = () => {
                   : "text-gray-300 hover:text-white hover:bg-blue-500/50"
                 }`}
             >
-              <FaUsers className="inline mr-2" /> Đội Tham Gia
+              <FaUsers className="inline mr-2" /> Participating Teams
             </button>
           </div>
 
@@ -224,16 +224,16 @@ const TournamentInformation = () => {
             {activeTab === "details" ? (
               <div className="space-y-6 animate-slideUp">
                 <div className="bg-gray-700/70 p-6 rounded-2xl shadow-md border border-gray-600/20">
-                  <h2 className="text-2xl font-bold text-blue-400 mb-4">Chi Tiết Giải Đấu</h2>
+                  <h2 className="text-2xl font-bold text-blue-400 mb-4">Tournament Details</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-200">
-                    <p><FaCalendarAlt className="inline mr-2 text-blue-400" />Ngày: {new Date(tournament.time_start).toLocaleDateString("vi-VN")}</p>
-                    <p><FaUsers className="inline mr-2 text-blue-400" />Số đội: {tournament.number_of_teams}</p>
-                    <p><FaMapMarkerAlt className="inline mr-2 text-blue-400" />Địa điểm: {tournament.location}</p>
-                    <p><FaTrophy className="inline mr-2 text-blue-400" />Thể thức: {tournament.format}</p>
+                    <p><FaCalendarAlt className="inline mr-2 text-blue-400" />Date: {new Date(tournament.time_start).toLocaleDateString("en-US")}</p>
+                    <p><FaUsers className="inline mr-2 text-blue-400" />Number of Teams: {tournament.number_of_teams}</p>
+                    <p><FaMapMarkerAlt className="inline mr-2 text-blue-400" />Location: {tournament.location}</p>
+                    <p><FaTrophy className="inline mr-2 text-blue-400" />Format: {tournament.format}</p>
                   </div>
                 </div>
                 <div className="bg-gray-700/70 p-6 rounded-2xl shadow-md border border-gray-600/20">
-                  <h2 className="text-2xl font-bold text-blue-400 mb-4">Mô Tả</h2>
+                  <h2 className="text-2xl font-bold text-blue-400 mb-4">Description</h2>
                   <p className="text-gray-200 leading-relaxed">{tournament.description}</p>
                 </div>
               </div>
@@ -242,10 +242,10 @@ const TournamentInformation = () => {
                 <table className="w-full text-left">
                   <thead className="bg-blue-500 text-white">
                     <tr>
-                      <th className="px-6 py-4">Tên Đội</th>
-                      <th className="px-6 py-4 text-center">Thành Viên</th>
-                      <th className="px-6 py-4">Liên Hệ</th>
-                      <th className="px-6 py-4 text-center">SĐT</th>
+                      <th className="px-6 py-4">Team Name</th>
+                      <th className="px-6 py-4 text-center">Members</th>
+                      <th className="px-6 py-4">Contact Person</th>
+                      <th className="px-6 py-4 text-center">Phone</th>
                     </tr>
                   </thead>
                   <tbody>
