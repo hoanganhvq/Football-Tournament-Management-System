@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/tournament';
+// const API_URL = 'http://localhost:5000/api/tournament';
+
+const API_URL = `${process.env.API_URL}/api/tournament`;
 
 export const getTournaments = async () => {
   try {

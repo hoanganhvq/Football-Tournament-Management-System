@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/group';
+// const API_URL = 'http://localhost:5000/api/group';
+
+const API_URL = `${process.env.API_URL}/api/group`;
 
 export const getGroups = async (id) => {
     try{

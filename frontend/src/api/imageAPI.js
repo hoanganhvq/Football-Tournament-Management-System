@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = process.env.API_URL;
 
 export const uploadImageTournamentAndPlayer = async (id, image) => {
     console.log("req body: ",image);
