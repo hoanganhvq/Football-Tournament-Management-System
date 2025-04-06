@@ -40,6 +40,11 @@ const SignIn = () => {
             localStorage.setItem('user', JSON.stringify(user));
             localStorage.setItem('isAuthenticated', 'true');
 
+            console.log("token: ", token);
+            console.log("user: ", JSON.stringify(user));
+            
+            
+            
             setAuthLogin(true);
 
             toast.success(`Welcome back, ${user.name}!`, {

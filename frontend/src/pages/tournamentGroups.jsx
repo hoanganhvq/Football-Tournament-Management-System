@@ -134,10 +134,10 @@ const TournamentDetails = () => {
         <div className="bg-slate-900 text-slate-300">
             <TournamentLabel />
 
-            {/* Search Interface */}
+            
             <div className="grid justify-center mb-6">
                 <div className="flex flex-col md:flex-row gap-4 p-6 bg-slate-800 rounded-xl shadow-lg">
-                    {/* Search by Name */}
+                
                     <div className="flex flex-col">
                         <label className="text-sm font-semibold text-teal-400 mb-1">Tournament Name</label>
                         <input
@@ -149,7 +149,6 @@ const TournamentDetails = () => {
                         />
                     </div>
 
-                    {/* Search by Status */}
                     <div className="flex flex-col">
                         <label className="text-sm font-semibold text-teal-400 mb-1">Status</label>
                         <select
