@@ -27,7 +27,6 @@ const register = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "none", // Adjusted for cross-origin
-      domain: "football-tournament-management-system.vercel.app"
     });
 
     res.setHeader('Authorization', `Bearer ${token}`);
@@ -58,8 +57,7 @@ const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
-      sameSite: "none", // Adjusted for cross-origin
-      domain: "football-tournament-management-system.vercel.app"
+      sameSite: "none", 
     });
 
     res.setHeader('Authorization', `Bearer ${token}`);
