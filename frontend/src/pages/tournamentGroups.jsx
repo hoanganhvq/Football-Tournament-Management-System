@@ -115,7 +115,12 @@ const TournamentDetails = () => {
             <div>
                 <TournamentLabel selectedTournament={selectedTournament} />
                 <div className="bg-slate-900 grid grid-rows-6 text-slate-300">
-                    <div>Not found match</div>
+                    <div className="grid justify-center">
+                        <div id="error-container" className="transition-all bg-red-200 flex gap-2 p-6 rounded-xl">
+                            <XCircleIcon className="h-6 w-6 text-red-500" id="error-svg" />
+                            <div id="error-message" className="text-red-500">{error}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
