@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createTournament } from '../api/tounamentAPI';
 import { useNavigate } from 'react-router-dom';
-import { uploadImageTournamentAndPlayer } from '../api/imageAPI';
+import {uploadImageTournamentAndPlayer}  from '../api/imageAPI';
 
 const NewTournamentForm = () => {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ const NewTournamentForm = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result);
-        setTournamentData({ ...tournamentData, logo: file });
+        setTournamentData({...tournamentData, logo: file});
       };
       reader.readAsDataURL(file);
     } else {
@@ -50,11 +50,13 @@ const NewTournamentForm = () => {
 
     const user = JSON.parse(localStorage.getItem('user')) || {};
 
+
     try {
       const id = `tournament_${Date.now()}`;
       console.log("Loading", tournamentData.logo);
-
-      const logoUrl = await uploadImageTournamentAndPlayer(id, tournamentData.logo);
+     
+        const logoUrl = await uploadImageTournamentAndPlayer(id, tournamentData.logo);
+      
 
       const defaultedData = {
         ...tournamentData,
@@ -67,8 +69,8 @@ const NewTournamentForm = () => {
         createdBy: user.id || null,
       };
 
-      console.log("hello: ", defaultedData);
-
+      console.log("hello: ", defaultedData );
+      
       await createTournament(defaultedData);
       setShowSuccess(true);
       setTimeout(() => {
@@ -126,7 +128,7 @@ const NewTournamentForm = () => {
                 className="w-full px-5 py-3 bg-gray-700/70 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-white hover:bg-gray-700/90 shadow-sm hover:shadow-blue-500/20 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
               />
               {logoPreview ? (
-                <div className="relative w-full h-40 bg-gray-700/50 rounded-xl overflow-hidden shadow-lg border-2 border-blue-500/50 group-hover:border-blue-500 transition-all duration-300">
+                <div className="relative w-full h-64 bg-gray-700/50 rounded-xl overflow-hidden shadow-lg border-2 border-blue-500/50 group-hover:border-blue-500 transition-all duration-300">
                   <img
                     src={logoPreview}
                     alt="Tournament Banner Preview"
@@ -138,8 +140,8 @@ const NewTournamentForm = () => {
                   </span>
                 </div>
               ) : (
-                <div className="w-full h-40 flex items-center justify-center bg-gray-700/50 rounded-xl border-2 border-dashed border-gray-600 text-gray-400 text-lg font-medium shadow-inner transition-all duration-300 group-hover:border-blue-500/50">
-                  Upload a banner (Recommended: 600x200px)
+                <div className="w-full h-48 flex items-center justify-center bg-gray-700/50 rounded-xl border-2 border-dashed border-gray-600 text-gray-400 text-lg font-medium shadow-inner transition-all duration-300 group-hover:border-blue-500/50">
+                  Upload a banner 
                 </div>
               )}
             </div>
