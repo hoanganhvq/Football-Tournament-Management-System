@@ -62,6 +62,7 @@ const Ranking = ({ tournament: initialTournament }) => {
     // Mark tournament as grouped and matches created
     const markTournamentAsGrouped = async () => {
         try {
+            
             await updateTournament(tournament._id, { 
                 is_Divided_Group: true, 
                 isGroupMatchesCreated: true 
@@ -181,7 +182,7 @@ const Ranking = ({ tournament: initialTournament }) => {
                 <h3 className="text-2xl font-semibold mb-6 text-center text-gray-300 animate-slide-in">
                     {tournament.format === 'Round Robin' ? 'Ranking' : 'Group Stage'}
                 </h3>
-                {!isTableCreated && isAdmin &&(
+                {!isTableCreated && isAdmin && tournament.teams.length > 2 &&(
                     <div className="text-center mb-6">
                         <button
                             onClick={handleGroupTeams}
