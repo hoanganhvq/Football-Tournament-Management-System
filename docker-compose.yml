@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI = mongodb://localhost:27017/FootBall_Tournament_Management
+      - JWT_SECRET = 66Uzwg+TeK44+9VstU4kHvpBzGaQCTdPp1jkJD8MjYg=
+      - NODE_ENV = "production"
+      - CLOUDINARY_CLOUD_NAME =dnuqb888u
+      - CLOUDINARY_API_KEY=416492879227736
+      - CLOUDINARY_API_SECRET=uYb_BseVBROEaFe2RcfcpLD8Ifk
+    depends_on:
+      - mongo
+
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # MongoDB service
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+# Volumes to persist MongoDB data
+volumes:
+  mongo_data:
