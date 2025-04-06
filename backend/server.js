@@ -13,7 +13,7 @@ const app = express();
 // ⚠️ Cho phép frontend (localhost:3000) gọi API
 // CORS will make the API accessible from the frontend
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://football-tournament-management-system.vercel.app/',
   credentials: true,
 }));
 //Midldleware
@@ -38,4 +38,6 @@ app.use('/api/group', require('./routes/groupRoutes'));
 app.use('/api/round', require('./routes/roundRoutes'));
 const PORT = process.env.PORT;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server đang chạy trên cổng ${PORT}`);
+});
