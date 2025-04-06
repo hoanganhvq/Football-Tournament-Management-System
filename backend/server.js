@@ -14,7 +14,6 @@ const app = express();
 // CORS will make the API accessible from the frontend
 app.use(cors({
   origin: 'https://football-tournament-management-system.vercel.app',
-  // origin: 'http://localhost:3000'
   credentials: true,
 }));
 //Midldleware

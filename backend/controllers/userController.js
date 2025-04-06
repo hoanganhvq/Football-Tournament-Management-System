@@ -57,9 +57,9 @@ const login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: true,
+      sameSite: "none", // Adjusted for cross-origin
+      domain: "football-tournament-management-system.vercel.app"
     });
 
     res.setHeader('Authorization', `Bearer ${token}`);
