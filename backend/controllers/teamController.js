@@ -109,10 +109,8 @@ const deleteTeam = async (req, res) => {
 
 //addPlayer 
 const addPlayerIntoTeam = async (req, res) => {
-  console.log("here");
   const { id } = req.params;
   const { playerData } = req.body;
-  console.log("playerData", playerData);
   try {
     const team = await Team.findById(id);
     if (!team) {
