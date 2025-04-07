@@ -12,15 +12,17 @@ const ManagePlayers = () => {
     name: "",
     position: "",
     number: "",
-    avatar: null, // File object
-    avatarPreview: "", // Base64 để preview
+    avatar: null,
+    avatarPreview: "",
     goals: 0,
   });
   const [error, setError] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedPlayer, setEditedPlayer] = useState(null);
   const [players, setPlayers] = useState([]);
-  const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+  const [filteredPlayers, setFilteredPlayers] = useState([]); // For search results
+  const [searchPosition, setSearchPosition] = useState(""); // Search filter
+  const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward", "Coach"];
   const [loading, setLoading] = useState(false);
   const [team, setTeam] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -30,17 +32,19 @@ const ManagePlayers = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      console.log("Token: ", token);
       const res = await getTeamByUserId(token);
       if (!res) {
         setPlayers([]);
+        setFilteredPlayers([]);
         return;
       }
       setTeam(res[0]);
       setPlayers(res[0].players);
+      setFilteredPlayers(res[0].players); // Initially show all players
     } catch (error) {
       console.error("Error fetching players: ", error);
       setPlayers([]);
+      setFilteredPlayers([]);
     } finally {
       setLoading(false);
     }
@@ -50,21 +54,32 @@ const ManagePlayers = () => {
     fetchPlayers();
   }, []);
 
+  // Filter players by position
+  useEffect(() => {
+    if (searchPosition === "") {
+      setFilteredPlayers(players);
+    } else {
+      setFilteredPlayers(players.filter((player) => player.position === searchPosition));
+    }
+  }, [searchPosition, players]);
+
   const handleAddPlayer = async () => {
-    if (!newPlayer.name || !newPlayer.position || !newPlayer.number) {
-      setError(" Please fill in all required fields!");
+    if (!newPlayer.name || !newPlayer.position || (newPlayer.position !== "Coach" && !newPlayer.number)) {
+      setError("Please fill in all required fields!");
       return;
     }
-    const numberAsInt = parseInt(newPlayer.number, 10);
-    if (players.some((player) => parseInt(player.number, 10) === numberAsInt)) {
-      setError(" Jersey number already exists!");
-      return;
+    if (newPlayer.position !== "Coach") {
+      const numberAsInt = parseInt(newPlayer.number, 10);
+      if (players.some((player) => parseInt(player.number, 10) === numberAsInt)) {
+        setError("Jersey number already exists!");
+        return;
+      }
     }
 
     setIsCreating(true);
     try {
       const teamId = team._id;
-      let playerData = { ...newPlayer, number: numberAsInt };
+      let playerData = { ...newPlayer, number: newPlayer.position !== "Coach" ? parseInt(newPlayer.number, 10) : null };
 
       if (newPlayer.avatar) {
         const id = `player_${Date.now()}`;
@@ -74,8 +89,6 @@ const ManagePlayers = () => {
         playerData.avatar = "https://res.cloudinary.com/dnuqb888u/image/upload/v1742676178/defaultUser_wyeok8.jpg";
       }
 
-      console.log("Player data to add: ", playerData);
-      console.log("Team ID: ", teamId);
       const { avatarPreview, ...rest } = playerData;
       await addPlayerIntoTeam(teamId, rest);
       await fetchPlayers();
@@ -83,7 +96,7 @@ const ManagePlayers = () => {
       setError("");
     } catch (error) {
       console.error("Error adding player: ", error);
-      setError(" Failed to add player. Please try again.");
+      setError("Failed to add player. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -92,18 +105,18 @@ const ManagePlayers = () => {
   const handleEditPlayer = (index, field, value) => {
     setEditedPlayer({
       ...editedPlayer,
-      [field]: field === "number" ? parseInt(value, 10) : value,
+      [field]: field === "number" && editedPlayer.position !== "Coach" ? parseInt(value, 10) : value,
     });
   };
 
   const handleDeletePlayer = async (index) => {
     try {
-      const playerId = players[index]._id;
+      const playerId = filteredPlayers[index]._id; // Use filteredPlayers here
       await deletePlayer(playerId);
       await fetchPlayers();
     } catch (error) {
       console.error("Error deleting player: ", error);
-      setError(" Failed to delete player. Please try again.");
+      setError("Failed to delete player. Please try again.");
     }
   };
 
@@ -139,37 +152,39 @@ const ManagePlayers = () => {
   };
 
   const startEditing = (index) => {
-    if (!players[index]) {
-      setError(" Invalid player data!");
+    if (!filteredPlayers[index]) {
+      setError("Invalid player data!");
       return;
     }
     setEditingIndex(index);
-    setEditedPlayer({ ...players[index], avatar: null, avatarPreview: players[index].avatar });
+    setEditedPlayer({ ...filteredPlayers[index], avatar: null, avatarPreview: filteredPlayers[index].avatar });
   };
 
   const saveEdit = async (index) => {
     if (!editedPlayer) {
-      setError(" No player data to save!");
+      setError("No player data to save!");
       return;
     }
-    if (!editedPlayer.name || !editedPlayer.position || !editedPlayer.number) {
-      setError(" Please fill in all required fields!");
+    if (!editedPlayer.name || !editedPlayer.position || (editedPlayer.position !== "Coach" && !editedPlayer.number)) {
+      setError("Please fill in all required fields!");
       return;
     }
-    const numberAsInt = parseInt(editedPlayer.number, 10);
-    if (
-      players.some(
-        (player, i) =>
-          parseInt(player.number, 10) === numberAsInt && i !== index
-      )
-    ) {
-      setError(" Jersey number already exists!");
-      return;
+    if (editedPlayer.position !== "Coach") {
+      const numberAsInt = parseInt(editedPlayer.number, 10);
+      if (
+        players.some(
+          (player, i) =>
+            parseInt(player.number, 10) === numberAsInt && player._id !== editedPlayer._id
+        )
+      ) {
+        setError("Jersey number already exists!");
+        return;
+      }
     }
     setIsUpdating(true);
     try {
       const { _id, __v, avatarPreview, ...dataToUpdate } = editedPlayer;
-      let updatedData = { ...dataToUpdate, number: numberAsInt };
+      let updatedData = { ...dataToUpdate, number: editedPlayer.position !== "Coach" ? parseInt(editedPlayer.number, 10) : null };
 
       if (editedPlayer.avatar instanceof File) {
         const id = `player_${Date.now()}`;
@@ -179,7 +194,6 @@ const ManagePlayers = () => {
         updatedData.avatar = editedPlayer.avatarPreview || "https://res.cloudinary.com/dnuqb888u/image/upload/v1742676178/defaultUser_wyeok8.jpg";
       }
 
-      console.log("Data to update: ", updatedData);
       await updatePlayer(_id, updatedData);
       await fetchPlayers();
       setEditingIndex(null);
@@ -228,15 +242,34 @@ const ManagePlayers = () => {
           {team.name}
         </h1>
 
+        {/* Search by Position */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-semibold text-gray-300 mb-4">🔍 Filter Players by Position</h2>
+          <select
+            value={searchPosition}
+            onChange={(e) => setSearchPosition(e.target.value)}
+            className="w-full max-w-xs p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+          >
+            <option value="">All Positions</option>
+            {positions.map((pos) => (
+              <option key={pos} value={pos}>
+                {pos}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Player List */}
         <h2 className="text-3xl font-semibold text-gray-300 mb-8">📋 Player List</h2>
-        {players.length === 0 ? (
-          <p className="text-gray-300 text-center text-lg">No players added yet.</p>
+        {filteredPlayers.length === 0 ? (
+          <p className="text-gray-300 text-center text-lg">
+            {searchPosition ? `No players found for position: ${searchPosition}` : "No players added yet."}
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {players.map((player, index) => (
+            {filteredPlayers.map((player, index) => (
               <div
-                key={index}
+                key={player._id}
                 className="bg-gray-700 p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-600"
               >
                 <div className="relative flex justify-center mb-4">
@@ -246,7 +279,7 @@ const ManagePlayers = () => {
                         <img
                           src={editedPlayer.avatarPreview || "https://via.placeholder.com/100"}
                           alt={player.name}
-                          className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-inner hover:opacity-75 transition-all duration-300" // Tăng kích thước lên w-24 h-24
+                          className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-inner hover:opacity-75 transition-all duration-300"
                         />
                         <span className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full">
                           Change Avatar
@@ -264,7 +297,7 @@ const ManagePlayers = () => {
                     <img
                       src={player.avatar || "https://via.placeholder.com/100"}
                       alt={player.name}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-600 shadow-inner" // Tăng kích thước lên w-24 h-24
+                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-600 shadow-inner"
                     />
                   )}
                   <span className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow-md">
@@ -304,13 +337,15 @@ const ManagePlayers = () => {
                           </option>
                         ))}
                       </select>
-                      <input
-                        type="number"
-                        value={editedPlayer.number}
-                        onChange={(e) => handleEditPlayer(index, "number", e.target.value)}
-                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-                        placeholder="Jersey Number"
-                      />
+                      {editedPlayer.position !== "Coach" && (
+                        <input
+                          type="number"
+                          value={editedPlayer.number || ""}
+                          onChange={(e) => handleEditPlayer(index, "number", e.target.value)}
+                          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                          placeholder="Jersey Number"
+                        />
+                      )}
                     </>
                   ) : (
                     <>
@@ -321,13 +356,15 @@ const ManagePlayers = () => {
                         className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all opacity-75 text-sm"
                         placeholder="Player Name"
                       />
-                      <input
-                        type="number"
-                        value={player.number}
-                        disabled
-                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all opacity-75 text-sm"
-                        placeholder="Jersey Number"
-                      />
+                      {player.position !== "Coach" && (
+                        <input
+                          type="number"
+                          value={player.number}
+                          disabled
+                          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all opacity-75 text-sm"
+                          placeholder="Jersey Number"
+                        />
+                      )}
                     </>
                   )}
                 </div>
@@ -400,13 +437,15 @@ const ManagePlayers = () => {
                 </option>
               ))}
             </select>
-            <input
-              type="number"
-              value={newPlayer.number}
-              onChange={(e) => handleInputChange(e, "number")}
-              className="p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-              placeholder="Jersey Number *"
-            />
+            {newPlayer.position !== "Coach" && (
+              <input
+                type="number"
+                value={newPlayer.number}
+                onChange={(e) => handleInputChange(e, "number")}
+                className="p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                placeholder="Jersey Number *"
+              />
+            )}
             <div className="relative group">
               <label
                 htmlFor="avatar-upload"
@@ -439,7 +478,7 @@ const ManagePlayers = () => {
               <img
                 src={newPlayer.avatarPreview}
                 alt="Preview"
-                className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md" // Tăng kích thước lên w-32 h-32
+                className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-md"
               />
               <button
                 onClick={removeImage}
