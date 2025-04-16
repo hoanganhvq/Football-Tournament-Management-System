@@ -103,6 +103,11 @@ const GeneralNews = ({ tournament }) => {
         setLoading(true);
         try {
             if(tournament.format === "Round Robin"){
+                const updateStatusData = {
+                    ...tournament,
+                    status: 'Ended',
+                };
+                const updatedTournament = await updateTournament(tournament._id, updateStatusData);
                 setTournamentStatus("Ended");
                 alert("Tournament has been successfully ended!");
             } else {

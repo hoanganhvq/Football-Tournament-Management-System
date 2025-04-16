@@ -67,12 +67,12 @@ const GroupStage = ({ tournament }) => {
         const matchTime = new Date(match.matchTime);
         const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000);
         setEditForm({
-            scoreTeam1: match.scoreTeam1 !== undefined ? match.scoreTeam1.toString() : '0',
-            scoreTeam2: match.scoreTeam2 !== undefined ? match.scoreTeam2.toString() : '0',
-            yellowCardsTeam1: match.yellowCardsTeam1 !== undefined ? match.yellowCardsTeam1.toString() : '0',
-            yellowCardsTeam2: match.yellowCardsTeam2 !== undefined ? match.yellowCardsTeam2.toString() : '0',
-            redCardsTeam1: match.redCardsTeam1 !== undefined ? match.redCardsTeam1.toString() : '0',
-            redCardsTeam2: match.redCardsTeam2 !== undefined ? match.redCardsTeam2.toString() : '0',
+            scoreTeam1: '', // No initial value
+            scoreTeam2: '', // No initial value
+            yellowCardsTeam1: match.yellowCardsTeam1 !== undefined ? match.yellowCardsTeam1.toString() : '',
+            yellowCardsTeam2: match.yellowCardsTeam2 !== undefined ? match.yellowCardsTeam2.toString() : '',
+            redCardsTeam1: match.redCardsTeam1 !== undefined ? match.redCardsTeam1.toString() : '',
+            redCardsTeam2: match.redCardsTeam2 !== undefined ? match.redCardsTeam2.toString() : '',
             venue: match.matchVenue || '',
             date: matchDate.toISOString().split('T')[0],
             time: adjustedTime.toISOString().substr(11, 5),
@@ -83,8 +83,8 @@ const GroupStage = ({ tournament }) => {
         try {
             let updatedMatch;
             if (editingCluster === 'stats') {
-                const scoreTeam1 = editForm.scoreTeam1 === '' ? 0 : parseInt(editForm.scoreTeam1);
-                const scoreTeam2 = editForm.scoreTeam2 === '' ? 0 : parseInt(editForm.scoreTeam2);
+                const scoreTeam1 = editForm.scoreTeam1.trim() === '' ? 0 : parseInt(editForm.scoreTeam1);
+                const scoreTeam2 = editForm.scoreTeam2.trim() === '' ? 0 : parseInt(editForm.scoreTeam2);
                 updatedMatch = {
                     scoreTeam1: isNaN(scoreTeam1) ? 0 : scoreTeam1,
                     scoreTeam2: isNaN(scoreTeam2) ? 0 : scoreTeam2,
@@ -95,7 +95,7 @@ const GroupStage = ({ tournament }) => {
                     status: 'Finished',
                     type: 'Group Stage',
                 };
-                console.log('Updating stats with payload:', updatedMatch);
+                console.log('Sending stats update payload:', updatedMatch);
             } else if (editingCluster === 'schedule') {
                 const [hours, minutes] = editForm.time.split(':').map(Number);
                 const matchTimeUTC = new Date(`${editForm.date}T${editForm.time}:00Z`);
@@ -106,14 +106,12 @@ const GroupStage = ({ tournament }) => {
                     matchTime: matchTimeUTC.toISOString(),
                     type: 'Group Stage',
                 };
-                console.log('Updating schedule with payload:', updatedMatch);
+                console.log('Sending schedule update payload:', updatedMatch);
             }
 
-            // Call API to update match
             const response = await updateMatchGroup(matchId, updatedMatch);
             console.log('API response:', response);
 
-            // Optimistically update matches state before re-fetching
             setMatches(prevMatches =>
                 prevMatches.map(m =>
                     m._id === matchId
@@ -126,19 +124,25 @@ const GroupStage = ({ tournament }) => {
                 })
             );
 
-           
             await fetchMatches();
-
             setEditingMatchId(null);
             setEditingCluster(null);
         } catch (error) {
             console.error('Error updating match:', error.response?.data || error.message);
+            alert('Failed to update match: ' + (error.response?.data?.message || error.message));
         }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditForm(prev => ({ ...prev, [name]: value }));
+        // Allow only numbers for score inputs
+        if (name === 'scoreTeam1' || name === 'scoreTeam2') {
+            if (value === '' || /^[0-9]*$/.test(value)) {
+                setEditForm(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+            setEditForm(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleCancel = () => {
@@ -181,7 +185,6 @@ const GroupStage = ({ tournament }) => {
                                         editingMatchId === match._id ? 'ring-2 ring-blue-600 bg-gray-800/95' : 'hover:bg-gray-850/95 hover:shadow-lg'
                                     }`}
                                 >
-                                    {/* Team 1 */}
                                     <div className="flex items-center gap-4 justify-end">
                                         <span className="text-lg font-semibold text-white truncate max-w-[220px]">
                                             {match.team1.name}
@@ -193,7 +196,6 @@ const GroupStage = ({ tournament }) => {
                                         />
                                     </div>
 
-                                    {/* Match Info */}
                                     {editingMatchId === match._id && isTournamentCreator ? (
                                         <div className="text-center w-64 space-y-6">
                                             {editingCluster === 'stats' ? (
@@ -202,25 +204,21 @@ const GroupStage = ({ tournament }) => {
                                                         <label className="text-sm text-gray-400 block mb-1">Score</label>
                                                         <div className="flex justify-center items-center gap-2">
                                                             <input
-                                                                type="number"
+                                                                type="text"
                                                                 name="scoreTeam1"
                                                                 value={editForm.scoreTeam1}
                                                                 onChange={handleInputChange}
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
                                                                 placeholder="0"
-                                                                min="0"
-                                                                step="1"
                                                             />
                                                             <span className="text-white text-lg font-bold">-</span>
                                                             <input
-                                                                type="number"
+                                                                type="text"
                                                                 name="scoreTeam2"
                                                                 value={editForm.scoreTeam2}
                                                                 onChange={handleInputChange}
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
                                                                 placeholder="0"
-                                                                min="0"
-                                                                step="1"
                                                             />
                                                         </div>
                                                     </div>
@@ -410,7 +408,6 @@ const GroupStage = ({ tournament }) => {
                                         </div>
                                     )}
 
-                                    {/* Team 2 */}
                                     <div className="flex items-center gap-4 justify-start">
                                         <img
                                             src={match.team2.logo}
