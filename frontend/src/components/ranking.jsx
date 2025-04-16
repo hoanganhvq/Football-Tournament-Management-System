@@ -124,6 +124,7 @@ const Ranking = ({ tournament: initialTournament }) => {
 
     useEffect(() => {
         fetchTournament();
+        fetchGroups();
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
     }, [initialTournament._id]);
