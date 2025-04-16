@@ -128,6 +128,9 @@ const TournamentInformation = () => {
     return () => clearInterval(timer);
   }, [timeLeft, timerReady]);
 
+  // Check if tournament is full
+  const isTournamentFull = tournament && tournament.teams?.length >= tournament.number_of_teams;
+
   const timerComponents = Object.keys(timeLeft).map((interval) => (
     <div key={interval} className="flex flex-col items-center">
       <span className="text-4xl font-extrabold text-blue-400 animate-pulse">
@@ -182,7 +185,7 @@ const TournamentInformation = () => {
                 <span className="text-blue-400 font-bold text-xl">Tournament has started!</span>
               )}
             </div>
-            {!isTeamRegistered && (
+            {!isTeamRegistered && !isTournamentFull && (
               <button
                 onClick={handleRegister}
                 className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-md"
@@ -193,6 +196,11 @@ const TournamentInformation = () => {
             {isTeamRegistered && (
               <p className="text-center text-blue-400 font-semibold">
                 Your team is already registered for this tournament!
+              </p>
+            )}
+            {!isTeamRegistered && isTournamentFull && (
+              <p className="text-center text-red-400 font-semibold">
+                Tournament is full! No more registrations accepted.
               </p>
             )}
           </div>
@@ -251,9 +259,9 @@ const TournamentInformation = () => {
                   <tbody>
                     {teams.map((team, index) => (
                       <tr
-                        key={team._id || index} 
-                        onClick={() => navigate(`/club/${team._id}`)} 
-                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/team/${team._id}`)} // Keyboard accessibility
+                        key={team._id || index}
+                        onClick={() => navigate(`/team/${team._id}`)}
+                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/team/${team._id}`)}
                         className="border-t border-gray-600/30 hover:bg-blue-500/20 transition-all duration-200 cursor-pointer"
                         role="button"
                         tabIndex={0}
