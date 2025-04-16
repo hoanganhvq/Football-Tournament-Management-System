@@ -1,122 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { getGroups, createGroup, createGroupMatches } from '../api/groupAPI';
-import { updateTournament, getTournamentById } from '../api/tounamentAPI';
-import LoadingScreen from '../pages/loadingScreen';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDoubleLeftIcon, TrophyIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import TournamentCardSkeleton from "../components/TournamentSkeleton";
+import LoadingScreen from './loadingScreen';
+import { getTournaments, updateTournament } from '../api/tounamentAPI';
 
-const Ranking = ({ tournament: initialTournament }) => {
-    const [tournament, setTournament] = useState(initialTournament);
-    const numberOfGroups = tournament.format === "Round Robin" ? 1 : tournament.number_of_group || 0;
-    const teams = tournament.teams || [];
-    const [loading, setLoading] = useState(false);
-    const [isTableCreated, setIsTableCreated] = useState(false);
-    const [isMatchCreated, setIsMatchCreated] = useState(false);
-    const [groupedTeams, setGroupedTeams] = useState(
-        Array.from({ length: numberOfGroups }, () => [])
+const TournamentLabel = () => {
+    return (
+        <div className="bg-slate-700 text-[15px] mb-7 gap-2 p-2 flex drop-shadow-xl place-items-center place-content-center font-semibold text-slate-300">
+            <div className="bg-sky-400 px-3 text-[16px] drop-shadow-lg font-bold text-slate-900 rounded-xl">TOURNAMENTS</div>
+        </div>
     );
-    const [groupInfo, setGroupInfo] = useState([]);
-    const [currentUserId, setCurrentUserId] = useState(null);
+}
 
-    const navigate = useNavigate(); // Initialize navigate hook
+const TournamentDetails = () => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [selectedTournament, setSelectedTournament] = useState(null);
+    const [error, setError] = useState(null);
+    const [tournaments, setTournaments] = useState(null);
+    const [filteredTournaments, setFilteredTournaments] = useState(null);
+    const [searchName, setSearchName] = useState('');
+    const [searchStatus, setSearchStatus] = useState('');
+    const [searchLocation, setSearchLocation] = useState('');
 
-    // Fetch the latest tournament from the server
     const fetchTournament = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const updatedTournament = await getTournamentById(initialTournament._id);
-            setTournament(updatedTournament);
-            setIsTableCreated(updatedTournament.is_Divided_Group || false);
-            setIsMatchCreated(updatedTournament.isGroupMatchesCreated || false);
-            if (updatedTournament.is_Divided_Group) {
-                await fetchGroups();
-            }
-        } catch (error) {
-            console.error("Error fetching tournament:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Fetch groups from the server
-    const fetchGroups = async () => {
-        try {
-            const res = await getGroups(tournament._id);
-            setGroupInfo(res);
-            const mappedGroups = res.groups.map(group =>
-                group.teams.map(item => ({
-                    ...item.team,
-                    matchesPlayed: item.matchesPlayed,
-                    wins: item.wins,
-                    draws: item.draws,
-                    losses: item.losses,
-                    goalsFor: item.goalsFor || 0,
-                    goalsAgainst: item.goalsAgainst || 0,
-                    yellowCards: item.yellowCards,
-                    redCards: item.redCards,
-                    points: item.points,
-                }))
-            );
-            setGroupedTeams(mappedGroups);
-        } catch (error) {
-            console.error("Error fetching groups: ", error);
-        }
-    };
-
-    // Mark tournament as grouped and matches created
-    const markTournamentAsGrouped = async () => {
-        try {
-            await updateTournament(tournament._id, { 
-                is_Divided_Group: true, 
-                isGroupMatchesCreated: true 
-            });
-            setIsMatchCreated(true);
-            setTournament({ ...tournament, is_Divided_Group: true, isGroupMatchesCreated: true });
+            const res = await getTournaments();
+            setTournaments(res);
+            setFilteredTournaments(res); // Initialize filtered tournaments
+            console.log('Public tournament: ', res);
         } catch (err) {
-            console.error("Error updating tournament:", err.response?.data);
-        }
-    };
-
-    // Divide teams into groups
-    const handleGroupTeams = async () => {
-        const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
-        const newGrouped = Array.from({ length: numberOfGroups }, () => []);
-
-        if (tournament.format === "Round Robin") {
-            newGrouped[0] = shuffledTeams;
-        } else {
-            shuffledTeams.forEach((team, index) => {
-                newGrouped[index % numberOfGroups].push(team);
-            });
-        }
-        console.log('Shuffled teams:', newGrouped);
-        setGroupedTeams(newGrouped);
-
-        try {
-            setLoading(true);
-            for (let i = 0; i < newGrouped.length; i++) {
-                const groupData = { groupIndex: i, teams: newGrouped[i] };
-                await createGroup(tournament._id, groupData);
+            if (err.response && err.response.status === 404) {
+                setError('Not found tournament !');
+            } else {
+                setError('Something went wrong !');
             }
-            await fetchGroups();
-            setIsTableCreated(true);
-            await updateTournament(tournament._id, { is_Divided_Group: true });
-            setTournament({ ...tournament, is_Divided_Group: true });
-        } catch (error) {
-            console.error("Error uploading grouped teams:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Create matches based on format
-    const handleCreateMatches = async () => {
-        try {
-            setLoading(true);
-            await createGroupMatches(groupInfo);
-            await markTournamentAsGrouped();
-            await fetchGroups();
-        } catch (error) {
-            console.error("Error creating matches:", error);
         } finally {
             setLoading(false);
         }
@@ -124,137 +44,202 @@ const Ranking = ({ tournament: initialTournament }) => {
 
     useEffect(() => {
         fetchTournament();
-        const user = localStorage.getItem('user');
-        setCurrentUserId(user ? JSON.parse(user).id : null);
-    }, [initialTournament._id]);
+    }, []);
 
-    const renderTeamRow = (team, teamIndex, groupIndex) => {
-        const isTop1 = teamIndex === 0;
-        const medal = ['🥇', '🥈', '🥉'][teamIndex] || '';
-        const rankLabel = tournament.format === 'Round Robin'
-            ? `#${teamIndex + 1}`
-            : `${String.fromCharCode(65 + groupIndex)}${teamIndex + 1}`;
-        const barWidth = Math.min(100, (team.points || 0) * 5);
+    useEffect(() => {
+        const updateStatusTournament = async () => {
+            if (tournaments && tournaments.length > 0) {
+                const now = Date.now();
+                const tournamentsToUpdate = tournaments.filter(t => {
+                    const startTime = new Date(t.time_start).getTime();
+                    return startTime <= now && t.status !== 'Ongoing' && t.status !== "Ended";
+                });
 
-        
-        const handleTeamClick = () => {
-            navigate(`/club/${team._id}`); 
+                console.log('Tournaments to update:', tournamentsToUpdate);
+
+                for (const tournament of tournamentsToUpdate) {
+                    const updatedTournament = { ...tournament, status: 'Ongoing' };
+                    try {
+                        await updateTournament(tournament._id, updatedTournament);
+                        console.log('Updated:', tournament._id);
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+
+                if (tournamentsToUpdate.length > 0) {
+                    fetchTournament();
+                }
+            }
         };
 
-        return (
-            <tr
-                key={team._id}
-                onClick={handleTeamClick} 
-                className={`border-b border-gray-700 hover:bg-gray-700/30 transition duration-300 transform hover:scale-101 cursor-pointer ${teamIndex % 2 === 0 ? 'bg-gray-900/10' : ''} ${isTop1 ? 'border-2 border-yellow-400 bg-yellow-200/5' : ''}`}
-            >
-                <td className="py-4 flex items-center">
-                    <span className="text-sm text-gray-400 mr-3">{rankLabel}</span>
-                    <img src={team.logo} alt="Team Logo" className="w-8 h-8 mr-3 rounded-full border border-gray-300 shadow-md" />
-                    <span className="text-gray-200 font-semibold truncate">
-                        {team.name} {medal}
-                    </span>
-                </td>
-                <td className="text-center text-gray-300">{team.matchesPlayed || 0}</td>
-                <td className="text-center text-gray-300">{team.wins || 0}</td>
-                <td className="text-center text-gray-300">{team.draws || 0}</td>
-                <td className="text-center text-gray-300">{team.losses || 0}</td>
-                <td className="text-center text-gray-300">{team.goalsFor - team.goalsAgainst || 0}</td>
-                <td className="text-center text-yellow-400 font-medium">{team.yellowCards || 0}</td>
-                <td className="text-center text-red-500 font-medium">{team.redCards || 0}</td>
-                <td className="text-center text-green-400 font-bold relative">
-                    {team.points || 0}
-                    <div className="h-1 mt-1 bg-green-500/30 rounded overflow-hidden">
-                        <div
-                            className="h-1 bg-green-400 transition-all duration-500"
-                            style={{ width: `${barWidth}%` }}
-                        ></div>
-                    </div>
-                </td>
-            </tr>
-        );
+        updateStatusTournament();
+    }, [tournaments]);
+
+    // Filter tournaments based on search criteria
+    useEffect(() => {
+        if (tournaments) {
+            const filtered = tournaments.filter(tournament => {
+                const matchesName = tournament.name.toLowerCase().includes(searchName.toLowerCase());
+                const matchesStatus = searchStatus ? tournament.status === searchStatus : true;
+                const matchesLocation = tournament.location.toLowerCase().includes(searchLocation.toLowerCase());
+                return matchesName && matchesStatus && matchesLocation;
+            });
+            setFilteredTournaments(filtered);
+        }
+    }, [searchName, searchStatus, searchLocation, tournaments]);
+
+    const handleNavigate = (tournament) => {
+        if (tournament.status === 'Upcoming') {
+            navigate(`/tournament/${tournament._id}`);
+        } else {
+            navigate(`/manage-tournaments/${tournament._id}`, { state: { tournament } });
+        }
     };
 
-    const isAdmin = currentUserId === tournament.createdBy;
-    if (loading) {
-        return <LoadingScreen message="Loading..." />;
+    const getStatusTag = (status) => {
+        switch (status) {
+            case "Upcoming":
+                return <div className="bg-blue-500 text-white px-2 py-1 text-xs font-bold rounded-full">Upcoming</div>;
+            case "Ongoing":
+                return <div className="bg-green-500 text-white px-2 py-1 text-xs font-bold rounded-full">On going</div>;
+            case "Ended":
+                return <div className="bg-gray-500 text-white px-2 py-1 text-xs font-bold rounded-full">Ended</div>;
+            default:
+                return null;
+        }
+    };
+
+    if (error) {
+        return (
+            <div>
+                <TournamentLabel selectedTournament={selectedTournament} />
+                <div className="bg-slate-900 grid grid-rows-6 text-slate-300">
+                    <div className="grid justify-center">
+                        <div id="error-container" className="transition-all bg-red-200 flex gap-2 p-6 rounded-xl">
+                            <XCircleIcon className="h-6 w-6 text-red-500" id="error-svg" />
+                            <div id="error-message" className="text-red-500">{error}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading || !tournaments) {
+        return <LoadingScreen message="Loading tournaments..." />;
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
-            <div className="max-w-5xl w-full bg-gray-800 rounded-3xl shadow-2xl p-8 overflow-hidden backdrop-blur-sm">
-                <h2 className="text-3xl font-extrabold mb-8 text-center text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400 animate-pulse-slow drop-shadow-md">
-                    Ranking
-                </h2>
-                <h3 className="text-2xl font-semibold mb-6 text-center text-gray-300 animate-slide-in">
-                    {tournament.format === 'Round Robin' ? 'Ranking' : 'Group Stage'}
-                </h3>
-                {!isTableCreated && isAdmin && tournament.teams.length > 2 && (
-                    <div className="text-center mb-6">
-                        <button
-                            onClick={handleGroupTeams}
-                            disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300"
-                        >
-                            {loading ? 'Creating grouped teams...' : 'Create Grouped Teams'}
-                        </button>
-                    </div>
-                )}
-                {isTableCreated && !isMatchCreated && isAdmin && (
-                    <div className="text-center mb-6">
-                        <button
-                            onClick={handleCreateMatches}
-                            disabled={loading}
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300"
-                        >
-                            {loading ? 'Creating matches...' : 'Create Matches'}
-                        </button>
-                    </div>
-                )}
-                <div className="grid grid-cols-1 gap-8">
-                    {groupedTeams.map((group, index) => (
-                        <div key={index} className="bg-gray-900/30 p-6 rounded-2xl shadow-lg border border-blue-700 backdrop-blur-sm">
-                            <h4 className="text-xl font-semibold mb-5 text-blue-400 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-teal-300 drop-shadow-md">
-                                {tournament.format === 'Round Robin' ? 'Group' : `Group ${String.fromCharCode(65 + index)}`}
-                            </h4>
-                            <table className="w-full text-white border-collapse">
-                                <thead>
-                                    <tr className="text-gray-400 border-b border-gray-700">
-                                        <th className="py-3 text-left font-medium">Team</th>
-                                        <th className="py-3 text-center font-medium">Matches</th>
-                                        <th className="py-3 text-center font-medium">Wins</th>
-                                        <th className="py-3 text-center font-medium">Draws</th>
-                                        <th className="py-3 text-center font-medium">Losses</th>
-                                        <th className="py-3 text-center font-medium">GD</th>
-                                        <th className="py-3 text-center font-medium">Yellow Cards</th>
-                                        <th className="py-3 text-center font-medium">Red Cards</th>
-                                        <th className="py-3 text-center font-medium">Points</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[...group]
-                                        .sort((a, b) => {
-                                            const pointsA = a.points || 0;
-                                            const pointsB = b.points || 0;
-                                            const diffA = (a.goalsFor || 0) - (a.goalsAgainst || 0);
-                                            const diffB = (b.goalsFor || 0) - (b.goalsAgainst || 0);
-                                            const winsA = a.wins || 0;
-                                            const winsB = b.wins || 0;
+        <div className="bg-slate-900 text-slate-300">
+            <TournamentLabel />
 
-                                            if (pointsB !== pointsA) return pointsB - pointsA;
-                                            if (diffB !== diffA) return diffB - diffA;
-                                            return winsB - winsA;
-                                        })
-                                        .map((team, teamIndex) =>
-                                            renderTeamRow(team, teamIndex, index)
-                                        )}
-                                </tbody>
-                            </table>
-                        </div>
-                    ))}
+            
+            <div className="grid justify-center mb-6">
+                <div className="flex flex-col md:flex-row gap-4 p-6 bg-slate-800 rounded-xl shadow-lg">
+                
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-teal-400 mb-1">Tournament Name</label>
+                        <input
+                            type="text"
+                            value={searchName}
+                            onChange={(e) => setSearchName(e.target.value)}
+                            placeholder="Search by name..."
+                            className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-teal-400 mb-1">Status</label>
+                        <select
+                            value={searchStatus}
+                            onChange={(e) => setSearchStatus(e.target.value)}
+                            className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                        >
+                            <option value="">All</option>
+                            <option value="Upcoming">Upcoming</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Ended">Ended</option>
+                        </select>
+                    </div>
+
+                    {/* Search by Location */}
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-teal-400 mb-1">Location</label>
+                        <input
+                            type="text"
+                            value={searchLocation}
+                            onChange={(e) => setSearchLocation(e.target.value)}
+                            placeholder="Search by location..."
+                            className="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Tournament List */}
+            <div className="grid justify-center">
+                <div className="grid gap-10 md:grid-cols-3 p-6">
+                    {filteredTournaments && filteredTournaments.length > 0 ? (
+                        filteredTournaments.map(tournament => (
+                            <div
+                                key={tournament.id}
+                                onClick={() => handleNavigate(tournament)}
+                                className="relative w-[320px] h-[400px] text-gray-300 bg-gradient-to-br from-slate-900 to-gray-800 
+                                hover:scale-[1.05] hover:shadow-lg hover:shadow-blue-500/30 transition-all ease-out duration-500 
+                                p-6 rounded-xl backdrop-blur-lg drop-shadow-lg flex flex-col justify-between cursor-pointer"
+                            >
+                                {/* Background Icon (Blurred Trophy) */}
+                                <TrophyIcon className="absolute w-48 h-48 opacity-5 -top-4 -right-4" />
+
+                                {/* Tournament Banner */}
+                                <div className="w-full h-40 rounded-t-xl overflow-hidden">
+                                    <img
+                                        src={tournament.logo}
+                                        alt={tournament.name}
+                                        className="w-full h-full object-cover drop-shadow-lg"
+                                    />
+                                </div>
+
+                                {/* Tournament Status Tag */}
+                                <div className="absolute top-3 right-3">{getStatusTag(tournament.status)}</div>
+
+                                {/* Tournament Info */}
+                                <div className="text-center mt-4">
+                                    <h2 className="text-lg font-semibold text-teal-400">{tournament.name}</h2>
+
+                                    {/* Số đội tham gia */}
+                                    <div className="mt-2 flex justify-center">
+                                        <div className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full shadow-md flex items-center gap-2">
+                                            <span>👥</span>
+                                            <span>{tournament.number_of_teams} Teams</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Location & Time */}
+                                <div className="text-center mt-2 text-gray-400 text-sm">
+                                    📍 <span className="font-medium text-white">{tournament.location}</span>
+                                </div>
+                                <div className="text-center text-gray-400 text-sm">
+                                    🗓 <span className="font-medium text-white">
+                                        {new Date(tournament.time_start).toLocaleDateString('vi-VN')}
+                                    </span>
+                                </div>
+
+                                {/* Tournament Format */}
+                                <div className="text-center mt-2 text-sm font-semibold text-blue-400">
+                                    ⚽ {tournament.format}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="col-span-3 text-center text-gray-400">No tournaments found matching your criteria.</div>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-export default Ranking;
+export default TournamentDetails;
