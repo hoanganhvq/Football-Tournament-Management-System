@@ -86,13 +86,13 @@ const GeneralNews = ({ tournament }) => {
  
             if (!winnerAndRunner ) {
                 alert("Cannot end tournament: Champion, Runner-Up, or Third Place is not determined yet.");
-                return; // Dừng hàm nếu không đủ dữ liệu
+                return; 
             }
             return true;
         } catch (error) {
             console.error("Error ending tournament:", error);
             alert("Failed to end the tournament: " + error.message);
-            throw error; // Re-throw for any additional error handling
+            throw error; 
         } finally {
             setLoading(false);
         }
@@ -102,14 +102,20 @@ const GeneralNews = ({ tournament }) => {
     const handleEndTournament = async () => {
         setLoading(true);
         try {
-           await  fetchDataEndTournament();
-            const updateStatusData = {
-                ...tournament,
-                status: 'Ended',
-            };
-            const updatedTournament = await updateTournament(tournament._id, updateStatusData);
-            setTournamentStatus("Ended");
-            alert("Tournament has been successfully ended!");
+            if(tournament.format === "Round Robin"){
+                setTournamentStatus("Ended");
+                alert("Tournament has been successfully ended!");
+            } else {
+                await  fetchDataEndTournament();
+                const updateStatusData = {
+                    ...tournament,
+                    status: 'Ended',
+                };
+                const updatedTournament = await updateTournament(tournament._id, updateStatusData);
+                setTournamentStatus("Ended");
+                alert("Tournament has been successfully ended!");
+            }
+         
     
         } catch (error) {
             console.error("Error ending tournament:", error);

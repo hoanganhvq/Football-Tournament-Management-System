@@ -113,7 +113,18 @@ const GroupStage = ({ tournament }) => {
             const response = await updateMatchGroup(matchId, updatedMatch);
             console.log('API response:', response);
 
-    
+            // Optimistically update matches state before re-fetching
+            setMatches(prevMatches =>
+                prevMatches.map(m =>
+                    m._id === matchId
+                        ? { ...m, ...updatedMatch }
+                        : m
+                ).sort((a, b) => {
+                    const dateA = new Date(`${a.matchDate.split('T')[0]}T${a.matchTime}`);
+                    const dateB = new Date(`${b.matchDate.split('T')[0]}T${b.matchTime}`);
+                    return dateA - dateB;
+                })
+            );
 
            
             await fetchMatches();
