@@ -66,41 +66,41 @@ const GeneralNews = ({ tournament }) => {
             teamCount
         };
     };
-    const fetchDataEndTournament = async()=>{
-        setLoading(true);
-        console.log("Chay ham fetchDataEnd ")
-        try{
-            const [_, finalAndThirdMatch] = await Promise.all([
-                fetchData(),
-                calculateFinalAndThirdMatch(),
-            ]);
-            console.log(finalAndThirdMatch);
+    // const fetchDataEndTournament = async()=>{
+    //     setLoading(true);
+    //     console.log("Chay ham fetchDataEnd ")
+    //     try{
+    //         const [_, finalAndThirdMatch] = await Promise.all([
+    //             fetchData(),
+    //             calculateFinalAndThirdMatch(),
+    //         ]);
+    //         console.log(finalAndThirdMatch);
     
-            const [winnerAndRunner, thirdPlace] = await Promise.all([
-                getWinnerAndRunner(tournament._id, finalAndThirdMatch.roundNumberFinal),
-                getThirdPlace(tournament._id, finalAndThirdMatch.roundNumberThird),
-            ]);
+    //         const [winnerAndRunner, thirdPlace] = await Promise.all([
+    //             getWinnerAndRunner(tournament._id, finalAndThirdMatch.roundNumberFinal),
+    //             getThirdPlace(tournament._id, finalAndThirdMatch.roundNumberThird),
+    //         ]);
          
-            console.log("The besst: ", winnerAndRunner);
-            console.log("Third: ", thirdPlace);
+    //         console.log("The besst: ", winnerAndRunner);
+    //         console.log("Third: ", thirdPlace);
             
-            setChampion(winnerAndRunner.winner);
-            setRunnerUp(winnerAndRunner.runnerUp);
-            setThirdPlace(thirdPlace);
+    //         setChampion(winnerAndRunner.winner);
+    //         setRunnerUp(winnerAndRunner.runnerUp);
+    //         setThirdPlace(thirdPlace);
  
-            if (!winnerAndRunner ) {
-                alert("Cannot end tournament: Champion, Runner-Up, or Third Place is not determined yet.");
-                return; 
-            }
-            return true;
-        } catch (error) {
-            console.error("Error ending tournament:", error);
-            alert("Failed to end the tournament: " + error.message);
-            throw error; 
-        } finally {
-            setLoading(false);
-        }
-    }
+    //         if (!winnerAndRunner ) {
+    //             alert("Cannot end tournament: Champion, Runner-Up, or Third Place is not determined yet.");
+    //             return; 
+    //         }
+    //         return true;
+    //     } catch (error) {
+    //         console.error("Error ending tournament:", error);
+    //         alert("Failed to end the tournament: " + error.message);
+    //         throw error; 
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }
 
     // Function to end the tournament
     const handleEndTournament = async () => {
@@ -237,55 +237,6 @@ const GeneralNews = ({ tournament }) => {
                     </div>
                 </section>
 
-                {tournamentStatus === "Ended" && tournament.format === "Group Stage" && (
-                    <section className="mt-8">
-                        <h4 className="text-2xl font-bold text-white mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse-slow">
-                            🏆 Top Teams
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[
-                                {
-                                    label: "Champion ",
-                                    value: champion1?.name || "TBD",
-                                    color: "from-yellow-400 to-yellow-600",
-                                    medal: "🥇",
-                                    shadow: "shadow-yellow-500/50",
-                                },
-                                {
-                                    label: "Runner-Up",
-                                    value: runnerUp2?.name || "TBD",
-                                    color: "from-gray-300 to-gray-500",
-                                    medal: "🥈",
-                                    shadow: "shadow-gray-500/50", 
-                                },
-                                {
-                                    label: "Third Place",
-                                    value: thirdPlace3?.name || "TBD",
-                                    color: "from-orange-400 to-orange-600",
-                                    medal: "🥉",
-                                    shadow: "shadow-orange-500/50",
-                                },
-                            ].map((stat, i) => (
-                                <div
-                                    key={i}
-                                    className={`relative bg-gradient-to-br ${stat.color} p-6 rounded-2xl border border-gray-600 transform transition duration-300 hover:scale-105 hover:${stat.shadow} hover:shadow-lg`}
-                                >
-                                    {/* Medal Icon */}
-                                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 rounded-full p-2 border border-gray-600">
-                                        <span className="text-3xl">{stat.medal}</span>
-                                    </div>
-                                    {/* Content */}
-                                    <div className="text-center mt-6">
-                                        <p className="text-gray-200 font-semibold text-lg">{stat.label}</p>
-                                        <p className="text-white text-2xl font-bold mt-2 drop-shadow-md">{stat.value}</p>
-                                    </div>
-                                    {/* Decorative Bottom Line */}
-                                    <div className="mt-4 h-1 w-1/2 mx-auto bg-white/30 rounded-full"></div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
             </div>
         </div>
     );
