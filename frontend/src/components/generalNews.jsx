@@ -266,7 +266,7 @@ const GeneralNews = ({ tournament }) => {
                                 },
                                 {
                                     label: "Runner-Up",
-                                    value: champion1?.name || "TBD",
+                                    value: runnerUp2?.name || "TBD",
                                     color: "from-gray-300 to-gray-500",
                                     medal: "🥈",
                                     shadow: "shadow-gray-500/50", 
