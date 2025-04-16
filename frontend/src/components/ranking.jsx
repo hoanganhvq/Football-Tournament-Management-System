@@ -1,83 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { getGroups, createGroup, createGroupMatches } from '../api/groupAPI';
 import { updateTournament, getTournamentById } from '../api/tounamentAPI';
 import LoadingScreen from '../pages/loadingScreen';
 
 const Ranking = ({ tournament: initialTournament }) => {
     const [tournament, setTournament] = useState(initialTournament);
-    const numberOfGroups = tournament.format === "Round Robin" ? 1 : tournament.number_of_group || 0;
+    const numberOfGroups = tournament.format === "Round Robin" ? 1 : tournament.number_of_group || 1;
     const teams = tournament.teams || [];
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const [isTableCreated, setIsTableCreated] = useState(false);
     const [isMatchCreated, setIsMatchCreated] = useState(false);
-    const [groupedTeams, setGroupedTeams] = useState(
-        Array.from({ length: numberOfGroups }, () => [])
-    );
+    const [groupedTeams, setGroupedTeams] = useState([]);
     const [groupInfo, setGroupInfo] = useState([]);
     const [currentUserId, setCurrentUserId] = useState(null);
 
-    const navigate = useNavigate(); // Initialize navigate hook
+    const navigate = useNavigate();
 
-    // Fetch the latest tournament from the server
     const fetchTournament = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            setLoading(true);
             const updatedTournament = await getTournamentById(initialTournament._id);
+            console.log('Fetched tournament:', updatedTournament);
             setTournament(updatedTournament);
             setIsTableCreated(updatedTournament.is_Divided_Group || false);
             setIsMatchCreated(updatedTournament.isGroupMatchesCreated || false);
             if (updatedTournament.is_Divided_Group) {
                 await fetchGroups();
+            } else {
+                setGroupedTeams(Array.from({ length: numberOfGroups }, () => []));
             }
         } catch (error) {
-            console.error("Error fetching tournament:", error);
+            console.error('Error fetching tournament:', error);
+            setError('Failed to load tournament data. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch groups from the server
     const fetchGroups = async () => {
         try {
             const res = await getGroups(tournament._id);
+            console.log('Fetched groups:', res);
+            if (!res?.groups?.length) {
+                setError('No group data available.');
+                setGroupedTeams(Array.from({ length: numberOfGroups }, () => []));
+                return;
+            }
             setGroupInfo(res);
             const mappedGroups = res.groups.map(group =>
                 group.teams.map(item => ({
                     ...item.team,
-                    matchesPlayed: item.matchesPlayed,
-                    wins: item.wins,
-                    draws: item.draws,
-                    losses: item.losses,
+                    matchesPlayed: item.matchesPlayed || 0,
+                    wins: item.wins || 0,
+                    draws: item.draws || 0,
+                    losses: item.losses || 0,
                     goalsFor: item.goalsFor || 0,
                     goalsAgainst: item.goalsAgainst || 0,
-                    yellowCards: item.yellowCards,
-                    redCards: item.redCards,
-                    points: item.points,
+                    yellowCards: item.yellowCards || 0,
+                    redCards: item.redCards || 0,
+                    points: item.points || 0,
                 }))
             );
             setGroupedTeams(mappedGroups);
         } catch (error) {
-            console.error("Error fetching groups: ", error);
+            console.error('Error fetching groups:', error);
+            setError('Failed to load group standings. Please try again.');
+            setGroupedTeams(Array.from({ length: numberOfGroups }, () => []));
         }
     };
 
-    // Mark tournament as grouped and matches created
     const markTournamentAsGrouped = async () => {
         try {
-            await updateTournament(tournament._id, { 
-                is_Divided_Group: true, 
-                isGroupMatchesCreated: true 
+            const updated = await updateTournament(tournament._id, {
+                is_Divided_Group: true,
+                isGroupMatchesCreated: true,
             });
+            console.log('Tournament updated:', updated);
             setIsMatchCreated(true);
             setTournament({ ...tournament, is_Divided_Group: true, isGroupMatchesCreated: true });
         } catch (err) {
-            console.error("Error updating tournament:", err.response?.data);
+            console.error('Error updating tournament:', err.response?.data || err);
+            setError('Failed to update tournament status.');
         }
     };
 
-    // Divide teams into groups
     const handleGroupTeams = async () => {
+        if (teams.length < 2) {
+            setError('Not enough teams to create groups.');
+            return;
+        }
         const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
         const newGrouped = Array.from({ length: numberOfGroups }, () => []);
 
@@ -93,36 +107,44 @@ const Ranking = ({ tournament: initialTournament }) => {
 
         try {
             setLoading(true);
+            setError(null);
             for (let i = 0; i < newGrouped.length; i++) {
                 const groupData = { groupIndex: i, teams: newGrouped[i] };
                 await createGroup(tournament._id, groupData);
             }
-            await fetchGroups();
-            setIsTableCreated(true);
             await updateTournament(tournament._id, { is_Divided_Group: true });
+            setIsTableCreated(true);
             setTournament({ ...tournament, is_Divided_Group: true });
+            await fetchGroups();
         } catch (error) {
-            console.error("Error uploading grouped teams:", error);
+            console.error('Error creating groups:', error);
+            setError('Failed to create groups. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Create matches based on format
     const handleCreateMatches = async () => {
+        if (!groupInfo?.groups?.length) {
+            setError('No groups available to create matches.');
+            return;
+        }
         try {
             setLoading(true);
+            setError(null);
             await createGroupMatches(groupInfo);
             await markTournamentAsGrouped();
             await fetchGroups();
         } catch (error) {
-            console.error("Error creating matches:", error);
+            console.error('Error creating matches:', error);
+            setError('Failed to create matches. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        if (!initialTournament?._id) return;
         fetchTournament();
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
@@ -136,15 +158,14 @@ const Ranking = ({ tournament: initialTournament }) => {
             : `${String.fromCharCode(65 + groupIndex)}${teamIndex + 1}`;
         const barWidth = Math.min(100, (team.points || 0) * 5);
 
-        
         const handleTeamClick = () => {
-            navigate(`/club/${team._id}`); 
+            navigate(`/club/${team._id}`);
         };
 
         return (
             <tr
                 key={team._id}
-                onClick={handleTeamClick} 
+                onClick={handleTeamClick}
                 className={`border-b border-gray-700 hover:bg-gray-700/30 transition duration-300 transform hover:scale-101 cursor-pointer ${teamIndex % 2 === 0 ? 'bg-gray-900/10' : ''} ${isTop1 ? 'border-2 border-yellow-400 bg-yellow-200/5' : ''}`}
             >
                 <td className="py-4 flex items-center">
@@ -154,15 +175,15 @@ const Ranking = ({ tournament: initialTournament }) => {
                         {team.name} {medal}
                     </span>
                 </td>
-                <td className="text-center text-gray-300">{team.matchesPlayed || 0}</td>
-                <td className="text-center text-gray-300">{team.wins || 0}</td>
-                <td className="text-center text-gray-300">{team.draws || 0}</td>
-                <td className="text-center text-gray-300">{team.losses || 0}</td>
-                <td className="text-center text-gray-300">{team.goalsFor - team.goalsAgainst || 0}</td>
-                <td className="text-center text-yellow-400 font-medium">{team.yellowCards || 0}</td>
-                <td className="text-center text-red-500 font-medium">{team.redCards || 0}</td>
+                <td className="text-center text-gray-300">{team.matchesPlayed}</td>
+                <td className="text-center text-gray-300">{team.wins}</td>
+                <td className="text-center text-gray-300">{team.draws}</td>
+                <td className="text-center text-gray-300">{team.losses}</td>
+                <td className="text-center text-gray-300">{team.goalsFor - team.goalsAgainst}</td>
+                <td className="text-center text-yellow-400 font-medium">{team.yellowCards}</td>
+                <td className="text-center text-red-500 font-medium">{team.redCards}</td>
                 <td className="text-center text-green-400 font-bold relative">
-                    {team.points || 0}
+                    {team.points}
                     <div className="h-1 mt-1 bg-green-500/30 rounded overflow-hidden">
                         <div
                             className="h-1 bg-green-400 transition-all duration-500"
@@ -175,6 +196,7 @@ const Ranking = ({ tournament: initialTournament }) => {
     };
 
     const isAdmin = currentUserId === tournament.createdBy;
+
     if (loading) {
         return <LoadingScreen message="Loading..." />;
     }
@@ -188,7 +210,12 @@ const Ranking = ({ tournament: initialTournament }) => {
                 <h3 className="text-2xl font-semibold mb-6 text-center text-gray-300 animate-slide-in">
                     {tournament.format === 'Round Robin' ? 'Ranking' : 'Group Stage'}
                 </h3>
-                {!isTableCreated && isAdmin && tournament.teams.length > 2 && (
+                {error && (
+                    <div className="text-center mb-6 text-red-500 font-semibold">
+                        {error}
+                    </div>
+                )}
+                {!isTableCreated && isAdmin && teams.length > 2 && (
                     <div className="text-center mb-6">
                         <button
                             onClick={handleGroupTeams}
@@ -210,46 +237,53 @@ const Ranking = ({ tournament: initialTournament }) => {
                         </button>
                     </div>
                 )}
+                {groupedTeams.length === 0 && !error && (
+                    <div className="text-center text-gray-400">
+                        No groups created yet.
+                    </div>
+                )}
                 <div className="grid grid-cols-1 gap-8">
                     {groupedTeams.map((group, index) => (
-                        <div key={index} className="bg-gray-900/30 p-6 rounded-2xl shadow-lg border border-blue-700 backdrop-blur-sm">
-                            <h4 className="text-xl font-semibold mb-5 text-blue-400 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-teal-300 drop-shadow-md">
-                                {tournament.format === 'Round Robin' ? 'Group' : `Group ${String.fromCharCode(65 + index)}`}
-                            </h4>
-                            <table className="w-full text-white border-collapse">
-                                <thead>
-                                    <tr className="text-gray-400 border-b border-gray-700">
-                                        <th className="py-3 text-left font-medium">Team</th>
-                                        <th className="py-3 text-center font-medium">Matches</th>
-                                        <th className="py-3 text-center font-medium">Wins</th>
-                                        <th className="py-3 text-center font-medium">Draws</th>
-                                        <th className="py-3 text-center font-medium">Losses</th>
-                                        <th className="py-3 text-center font-medium">GD</th>
-                                        <th className="py-3 text-center font-medium">Yellow Cards</th>
-                                        <th className="py-3 text-center font-medium">Red Cards</th>
-                                        <th className="py-3 text-center font-medium">Points</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[...group]
-                                        .sort((a, b) => {
-                                            const pointsA = a.points || 0;
-                                            const pointsB = b.points || 0;
-                                            const diffA = (a.goalsFor || 0) - (a.goalsAgainst || 0);
-                                            const diffB = (b.goalsFor || 0) - (b.goalsAgainst || 0);
-                                            const winsA = a.wins || 0;
-                                            const winsB = b.wins || 0;
+                        group.length > 0 && (
+                            <div key={index} className="bg-gray-900/30 p-6 rounded-2xl shadow-lg border border-blue-700 backdrop-blur-sm">
+                                <h4 className="text-xl font-semibold mb-5 text-blue-400 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-teal-300 drop-shadow-md">
+                                    {tournament.format === 'Round Robin' ? 'Group' : `Group ${String.fromCharCode(65 + index)}`}
+                                </h4>
+                                <table className="w-full text-white border-collapse">
+                                    <thead>
+                                        <tr className="text-gray-400 border-b border-gray-700">
+                                            <th className="py-3 text-left font-medium">Team</th>
+                                            <th className="py-3 text-center font-medium">Matches</th>
+                                            <th className="py-3 text-center font-medium">Wins</th>
+                                            <th className="py-3 text-center font-medium">Draws</th>
+                                            <th className="py-3 text-center font-medium">Losses</th>
+                                            <th className="py-3 text-center font-medium">GD</th>
+                                            <th className="py-3 text-center font-medium">Yellow Cards</th>
+                                            <th className="py-3 text-center font-medium">Red Cards</th>
+                                            <th className="py-3 text-center font-medium">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[...group]
+                                            .sort((a, b) => {
+                                                const pointsA = a.points || 0;
+                                                const pointsB = b.points || 0;
+                                                const diffA = (a.goalsFor || 0) - (a.goalsAgainst || 0);
+                                                const diffB = (b.goalsFor || 0) - (b.goalsAgainst || 0);
+                                                const winsA = a.wins || 0;
+                                                const winsB = b.wins || 0;
 
-                                            if (pointsB !== pointsA) return pointsB - pointsA;
-                                            if (diffB !== diffA) return diffB - diffA;
-                                            return winsB - winsA;
-                                        })
-                                        .map((team, teamIndex) =>
-                                            renderTeamRow(team, teamIndex, index)
-                                        )}
-                                </tbody>
-                            </table>
-                        </div>
+                                                if (pointsB !== pointsA) return pointsB - pointsA;
+                                                if (diffB !== diffA) return diffB - diffA;
+                                                return winsB - winsA;
+                                            })
+                                            .map((team, teamIndex) =>
+                                                renderTeamRow(team, teamIndex, index)
+                                            )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )
                     ))}
                 </div>
             </div>
