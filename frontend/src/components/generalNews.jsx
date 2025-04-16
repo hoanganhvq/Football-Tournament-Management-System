@@ -138,16 +138,15 @@ const GeneralNews = ({ tournament }) => {
 
     useEffect(() => {
         if (!tournament?._id) return;
-    
         fetchData();
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
-        console.log("Chay useEffect")
+        console.log("Chay useEffect");
         if (tournament.status === "Ended") {
             if (tournament.format === "Group Stage") {
                 fetchDataEndTournament();
             } else if (tournament.format === "Round Robin") {
-                return
+                return;
             }
         }
     }, [tournament._id, tournament.status, tournament.format]);
