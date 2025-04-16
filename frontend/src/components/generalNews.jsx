@@ -81,6 +81,9 @@ const GeneralNews = ({ tournament }) => {
                 getThirdPlace(tournament._id, finalAndThirdMatch.roundNumberThird),
             ]);
          
+            console.log("The besst: ", winnerAndRunner);
+            console.log("Third: ", thirdPlace);
+            
             setChampion(winnerAndRunner.winner);
             setRunnerUp(winnerAndRunner.runnerUp);
             setThirdPlace(thirdPlace);
