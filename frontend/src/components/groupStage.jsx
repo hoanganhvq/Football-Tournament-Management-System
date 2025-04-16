@@ -6,8 +6,9 @@ import { updateGroup } from '../api/groupAPI';
 const GroupStage = ({ tournament }) => {
     const [loading, setLoading] = useState(false);
     const [matches, setMatches] = useState([]);
+    const [filteredMatches, setFilteredMatches] = useState([]); // State for filtered matches
     const [editingMatchId, setEditingMatchId] = useState(null);
-    const [editingCluster, setEditingCluster] = useState(null); // 'stats' or 'schedule'
+    const [editingCluster, setEditingCluster] = useState(null);
     const [editForm, setEditForm] = useState({
         scoreTeam1: '',
         scoreTeam2: '',
@@ -19,8 +20,12 @@ const GroupStage = ({ tournament }) => {
         date: '',
         time: ''
     });
+    const [searchForm, setSearchForm] = useState({
+        teamName: '',
+        venue: '',
+        time: ''
+    });
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchMatches = async () => {
         setLoading(true);
@@ -28,11 +33,12 @@ const GroupStage = ({ tournament }) => {
             const res = await getMatchesByTournamentId(tournament._id);
             const groupStageMatches = res.filter(match => match.type === "Group Stage");
             const sortedMatches = groupStageMatches.sort((a, b) => {
-                const dateA = new Date(`${a.matchDate.split('T')[0]}T${a.matchTime}`);
-                const dateB = new Date(`${b.matchDate.split('T')[0]}T${b.matchTime}`);
+                const dateA = new Date(a.matchDate + 'T' + a.matchTime);
+                const dateB = new Date(b.matchDate + 'T' + b.matchTime);
                 return dateA - dateB;
             });
             setMatches(sortedMatches);
+            setFilteredMatches(sortedMatches); // Initialize filtered matches
             console.log('Group Stage Match data', sortedMatches);
         } catch (error) {
             console.error('Error fetching matches:', error);
@@ -47,33 +53,44 @@ const GroupStage = ({ tournament }) => {
         setCurrentUserId(user ? JSON.parse(user).id : null);
     }, [tournament?._id]);
 
-    const isTournamentCreator = currentUserId && tournament.createdBy?.toString() === currentUserId.toString();
-
-    const filterMatches = (matches) => {
-        if (!searchQuery.trim()) return matches;
-        const query = searchQuery.toLowerCase();
-        return matches.filter(match => {
-            const team1Name = match.team1.name.toLowerCase();
-            const team2Name = match.team2.name.toLowerCase();
-            const venue = match.matchVenue?.toLowerCase() || '';
-            const time = new Date(match.matchTime).toLocaleTimeString('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'Asia/Ho_Chi_Minh',
-            }).toLowerCase();
-            return (
-                team1Name.includes(query) ||
-                team2Name.includes(query) ||
-                venue.includes(query) ||
-                time.includes(query)
-            );
-        });
+    // Handle search input changes
+    const handleSearchInputChange = (e) => {
+        const { name, value } = e.target;
+        setSearchForm(prev => ({ ...prev, [name]: value }));
     };
+
+    // Filter matches based on search criteria
+    useEffect(() => {
+        const filtered = matches.filter(match => {
+            const teamNameMatch = searchForm.teamName
+                ? match.team1.name.toLowerCase().includes(searchForm.teamName.toLowerCase()) ||
+                  match.team2.name.toLowerCase().includes(searchForm.teamName.toLowerCase())
+                : true;
+
+            const venueMatch = searchForm.venue
+                ? match.matchVenue?.toLowerCase().includes(searchForm.venue.toLowerCase())
+                : true;
+
+            const timeMatch = searchForm.time
+                ? new Date(match.matchDate + 'T' + match.matchTime).toLocaleString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                  }).toLowerCase().includes(searchForm.time.toLowerCase())
+                : true;
+
+            return teamNameMatch && venueMatch && timeMatch;
+        });
+        setFilteredMatches(filtered);
+    }, [searchForm, matches]);
+
+    const isTournamentCreator = currentUserId && tournament.createdBy?.toString() === currentUserId.toString();
 
     const groupMatches = () => {
         const grouped = {};
-        const filteredMatches = filterMatches(matches);
-        filteredMatches.forEach(match => {
+        filteredMatches.forEach(match => { // Use filteredMatches instead of matches
             const groupName = match.group?.name || 'Undefined';
             if (!grouped[groupName]) {
                 grouped[groupName] = [];
@@ -130,7 +147,26 @@ const GroupStage = ({ tournament }) => {
 
             console.log('Payload sent to updateMatch:', updatedMatch);
             await updateMatchGroup(matchId, updatedMatch);
-            await fetchMatches();
+
+            const updatedMatches = matches.map(m =>
+                m._id === matchId
+                    ? {
+                          ...m,
+                          ...updatedMatch,
+                          ...(editingCluster === 'schedule' && {
+                              matchDate: new Date(updatedMatch.matchDate),
+                              matchTime: new Date(updatedMatch.matchTime),
+                          })
+                      }
+                    : m
+            ).sort((a, b) => {
+                const dateA = new Date(a.matchDate + 'T' + a.matchTime);
+                const dateB = new Date(b.matchDate + 'T' + b.matchTime);
+                return dateA - dateB;
+            });
+
+            setMatches(updatedMatches);
+            setFilteredMatches(updatedMatches); // Update filtered matches as well
             setEditingMatchId(null);
             setEditingCluster(null);
         } catch (error) {
@@ -141,10 +177,6 @@ const GroupStage = ({ tournament }) => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setEditForm(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
     };
 
     const handleCancel = () => {
@@ -167,18 +199,43 @@ const GroupStage = ({ tournament }) => {
 
     return (
         <div className="p-6 bg-gradient-to-b from-gray-900 to-black min-h-screen">
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-6 text-center tracking-wide">
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-10 text-center tracking-wide">
                 Group Stage
             </h1>
+
+            {/* Search Form */}
             <div className="max-w-5xl mx-auto mb-8">
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder="Search by team, venue, or time (e.g., 14:00)"
-                    className="w-full bg-gray-800/80 text-white rounded-lg p-3 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner placeholder-gray-400"
-                />
+                <div className="bg-gray-800/90 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-lg font-semibold text-white mb-4">Search Matches</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <input
+                            type="text"
+                            name="teamName"
+                            value={searchForm.teamName}
+                            onChange={handleSearchInputChange}
+                            placeholder="Search by team name"
+                            className="w-full bg-gray-700/80 text-white rounded-lg p-3 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                        <input
+                            type="text"
+                            name="venue"
+                            value={searchForm.venue}
+                            onChange={handleSearchInputChange}
+                            placeholder="Search by venue"
+                            className="w-full bg-gray-700/80 text-white rounded-lg p-3 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                        <input
+                            type="text"
+                            name="time"
+                            value={searchForm.time}
+                            onChange={handleSearchInputChange}
+                            placeholder="Search by date/time (e.g., 16/04/2025 14:30)"
+                            className="w-full bg-gray-700/80 text-white rounded-lg p-3 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                    </div>
+                </div>
             </div>
+
             <div className="space-y-12 max-w-5xl mx-auto">
                 {Object.entries(groupedMatches).map(([groupName, groupMatches]) => (
                     <div
@@ -307,6 +364,30 @@ const GroupStage = ({ tournament }) => {
                                                     </div>
                                                 </div>
                                             ) : (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <span className="text-xs text-gray-500 block">Score</span>
+                                                        <span className="text-xl font-bold text-blue-300 bg-gray-800/50 px-4 py-1 rounded-full shadow-inner">
+                                                            {match.scoreTeam1 || match.scoreTeam2
+                                                                ? `${match.scoreTeam1 || 0} - ${match.scoreTeam2 || 0}`
+                                                                : 'Not available'}
+                                                        </span>
+                                                    </div>
+                                                    {isTournamentCreator && (
+                                                        <button
+                                                            onClick={() => handleEdit(match, 'stats')}
+                                                            className="mt-2 bg-blue-500 text-white px-4 py-1.5 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                            Edit Stats
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {editingCluster === 'schedule' ? (
                                                 <div className="space-y-4">
                                                     <div>
                                                         <label className="text-sm text-gray-400 block mb-1">Venue</label>
@@ -359,6 +440,42 @@ const GroupStage = ({ tournament }) => {
                                                             Cancel
                                                         </button>
                                                     </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <span className="text-xs text-gray-500 block">Venue</span>
+                                                        <span className="text-sm text-gray-300 bg-gray-700/30 px-2 py-1 rounded-md truncate w-full">
+                                                            {match.matchVenue || 'Not available'}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-xs text-gray-500 block">Time</span>
+                                                        <span className="text-sm text-gray-400 block">
+                                                            {new Date(match.matchDate).toLocaleDateString('en-GB', {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: 'numeric',
+                                                            })}
+                                                            {' - '}
+                                                            {new Date(match.matchTime).toLocaleTimeString('en-GB', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                                timeZone: 'Asia/Ho_Chi_Minh',
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    {isTournamentCreator && (
+                                                        <button
+                                                            onClick={() => handleEdit(match, 'schedule')}
+                                                            className="mt-2 bg-blue-500 text-white px-4 py-1.5 rounded-lg hover:bg-blue-600 transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                            Edit Schedule
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
