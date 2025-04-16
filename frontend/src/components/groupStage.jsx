@@ -7,7 +7,7 @@ const GroupStage = ({ tournament }) => {
     const [loading, setLoading] = useState(false);
     const [matches, setMatches] = useState([]);
     const [editingMatchId, setEditingMatchId] = useState(null);
-    const [editingCluster, setEditingCluster] = useState(null); // 'stats' or 'schedule'
+    const [editingCluster, setEditingCluster] = useState(null);
     const [editForm, setEditForm] = useState({
         scoreTeam1: '',
         scoreTeam2: '',
@@ -27,7 +27,6 @@ const GroupStage = ({ tournament }) => {
             const res = await getMatchesByTournamentId(tournament._id);
             const groupStageMatches = res.filter(match => match.type === "Group Stage");
             const sortedMatches = groupStageMatches.sort((a, b) => {
-                // Combine matchDate and matchTime for accurate sorting
                 const dateA = new Date(`${a.matchDate.split('T')[0]}T${a.matchTime}`);
                 const dateB = new Date(`${b.matchDate.split('T')[0]}T${b.matchTime}`);
                 return dateA - dateB;
@@ -66,14 +65,14 @@ const GroupStage = ({ tournament }) => {
         setEditingCluster(cluster);
         const matchDate = new Date(match.matchDate);
         const matchTime = new Date(match.matchTime);
-        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000); 
+        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000);
         setEditForm({
-            scoreTeam1: match.scoreTeam1 || 0,
-            scoreTeam2: match.scoreTeam2 || 0,
-            yellowCardsTeam1: match.yellowCardsTeam1 || 0,
-            yellowCardsTeam2: match.yellowCardsTeam2 || 0,
-            redCardsTeam1: match.redCardsTeam1 || 0,
-            redCardsTeam2: match.redCardsTeam2 || 0,
+            scoreTeam1: match.scoreTeam1 !== undefined ? match.scoreTeam1.toString() : '0',
+            scoreTeam2: match.scoreTeam2 !== undefined ? match.scoreTeam2.toString() : '0',
+            yellowCardsTeam1: match.yellowCardsTeam1 !== undefined ? match.yellowCardsTeam1.toString() : '0',
+            yellowCardsTeam2: match.yellowCardsTeam2 !== undefined ? match.yellowCardsTeam2.toString() : '0',
+            redCardsTeam1: match.redCardsTeam1 !== undefined ? match.redCardsTeam1.toString() : '0',
+            redCardsTeam2: match.redCardsTeam2 !== undefined ? match.redCardsTeam2.toString() : '0',
             venue: match.matchVenue || '',
             date: matchDate.toISOString().split('T')[0],
             time: adjustedTime.toISOString().substr(11, 5),
@@ -84,9 +83,11 @@ const GroupStage = ({ tournament }) => {
         try {
             let updatedMatch;
             if (editingCluster === 'stats') {
+                const scoreTeam1 = editForm.scoreTeam1 === '' ? 0 : parseInt(editForm.scoreTeam1);
+                const scoreTeam2 = editForm.scoreTeam2 === '' ? 0 : parseInt(editForm.scoreTeam2);
                 updatedMatch = {
-                    scoreTeam1: parseInt(editForm.scoreTeam1) || 0,
-                    scoreTeam2: parseInt(editForm.scoreTeam2) || 0,
+                    scoreTeam1: isNaN(scoreTeam1) ? 0 : scoreTeam1,
+                    scoreTeam2: isNaN(scoreTeam2) ? 0 : scoreTeam2,
                     yellowCardsTeam1: parseInt(editForm.yellowCardsTeam1) || 0,
                     yellowCardsTeam2: parseInt(editForm.yellowCardsTeam2) || 0,
                     redCardsTeam1: parseInt(editForm.redCardsTeam1) || 0,
@@ -94,23 +95,28 @@ const GroupStage = ({ tournament }) => {
                     status: 'Finished',
                     type: 'Group Stage',
                 };
+                console.log('Updating stats with payload:', updatedMatch);
             } else if (editingCluster === 'schedule') {
                 const [hours, minutes] = editForm.time.split(':').map(Number);
                 const matchTimeUTC = new Date(`${editForm.date}T${editForm.time}:00Z`);
-                matchTimeUTC.setUTCHours(hours - 7, minutes, 0, 0); // Convert to UTC
+                matchTimeUTC.setUTCHours(hours - 7, minutes, 0, 0);
                 updatedMatch = {
                     matchVenue: editForm.venue,
                     matchDate: `${editForm.date}T00:00:00Z`,
                     matchTime: matchTimeUTC.toISOString(),
                     type: 'Group Stage',
                 };
+                console.log('Updating schedule with payload:', updatedMatch);
             }
 
-            console.log('Payload sent to updateMatch:', updatedMatch);
-            await updateMatchGroup(matchId, updatedMatch);
+            // Call API to update match
+            const response = await updateMatchGroup(matchId, updatedMatch);
+            console.log('API response:', response);
 
-            // Update matches and re-fetch to ensure sorting
-            await fetchMatches(); // Re-fetch matches to ensure correct sorting after update
+    
+
+           
+            await fetchMatches();
 
             setEditingMatchId(null);
             setEditingCluster(null);
@@ -132,7 +138,7 @@ const GroupStage = ({ tournament }) => {
     if (loading) {
         return <LoadingScreen message="Loading matches..." />;
     }
-    
+
     const groupedMatches = groupMatches();
     if (Object.keys(groupedMatches).length === 0) {
         return (
@@ -192,6 +198,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                             <span className="text-white text-lg font-bold">-</span>
                                                             <input
@@ -202,6 +209,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                         </div>
                                                     </div>
@@ -216,6 +224,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                             <span className="text-white text-lg font-bold">-</span>
                                                             <input
@@ -226,6 +235,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                         </div>
                                                     </div>
@@ -240,6 +250,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                             <span className="text-white text-lg font-bold">-</span>
                                                             <input
@@ -250,6 +261,7 @@ const GroupStage = ({ tournament }) => {
                                                                 className="w-16 text-center bg-gray-700/80 text-white rounded-lg p-2 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all shadow-inner"
                                                                 placeholder="0"
                                                                 min="0"
+                                                                step="1"
                                                             />
                                                         </div>
                                                     </div>
@@ -335,8 +347,8 @@ const GroupStage = ({ tournament }) => {
                                             <div>
                                                 <span className="text-xs text-gray-500 block">Score</span>
                                                 <span className="text-xl font-bold text-blue-300 bg-gray-800/50 px-4 py-1 rounded-full shadow-inner">
-                                                    {match.scoreTeam1 || match.scoreTeam2
-                                                        ? `${match.scoreTeam1 || 0} - ${match.scoreTeam2 || 0}`
+                                                    {match.scoreTeam1 !== undefined && match.scoreTeam2 !== undefined
+                                                        ? `${match.scoreTeam1} - ${match.scoreTeam2}`
                                                         : 'Not available'}
                                                 </span>
                                             </div>
