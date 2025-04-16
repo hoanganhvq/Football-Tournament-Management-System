@@ -20,6 +20,7 @@ const GroupStage = ({ tournament }) => {
         time: ''
     });
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchMatches = async () => {
         setLoading(true);
@@ -27,7 +28,6 @@ const GroupStage = ({ tournament }) => {
             const res = await getMatchesByTournamentId(tournament._id);
             const groupStageMatches = res.filter(match => match.type === "Group Stage");
             const sortedMatches = groupStageMatches.sort((a, b) => {
-                // Combine matchDate and matchTime for accurate sorting
                 const dateA = new Date(`${a.matchDate.split('T')[0]}T${a.matchTime}`);
                 const dateB = new Date(`${b.matchDate.split('T')[0]}T${b.matchTime}`);
                 return dateA - dateB;
@@ -49,9 +49,31 @@ const GroupStage = ({ tournament }) => {
 
     const isTournamentCreator = currentUserId && tournament.createdBy?.toString() === currentUserId.toString();
 
+    const filterMatches = (matches) => {
+        if (!searchQuery.trim()) return matches;
+        const query = searchQuery.toLowerCase();
+        return matches.filter(match => {
+            const team1Name = match.team1.name.toLowerCase();
+            const team2Name = match.team2.name.toLowerCase();
+            const venue = match.matchVenue?.toLowerCase() || '';
+            const time = new Date(match.matchTime).toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Ho_Chi_Minh',
+            }).toLowerCase();
+            return (
+                team1Name.includes(query) ||
+                team2Name.includes(query) ||
+                venue.includes(query) ||
+                time.includes(query)
+            );
+        });
+    };
+
     const groupMatches = () => {
         const grouped = {};
-        matches.forEach(match => {
+        const filteredMatches = filterMatches(matches);
+        filteredMatches.forEach(match => {
             const groupName = match.group?.name || 'Undefined';
             if (!grouped[groupName]) {
                 grouped[groupName] = [];
@@ -66,7 +88,7 @@ const GroupStage = ({ tournament }) => {
         setEditingCluster(cluster);
         const matchDate = new Date(match.matchDate);
         const matchTime = new Date(match.matchTime);
-        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000); 
+        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000);
         setEditForm({
             scoreTeam1: match.scoreTeam1 || 0,
             scoreTeam2: match.scoreTeam2 || 0,
@@ -97,7 +119,7 @@ const GroupStage = ({ tournament }) => {
             } else if (editingCluster === 'schedule') {
                 const [hours, minutes] = editForm.time.split(':').map(Number);
                 const matchTimeUTC = new Date(`${editForm.date}T${editForm.time}:00Z`);
-                matchTimeUTC.setUTCHours(hours - 7, minutes, 0, 0); // Convert to UTC
+                matchTimeUTC.setUTCHours(hours - 7, minutes, 0, 0);
                 updatedMatch = {
                     matchVenue: editForm.venue,
                     matchDate: `${editForm.date}T00:00:00Z`,
@@ -108,10 +130,7 @@ const GroupStage = ({ tournament }) => {
 
             console.log('Payload sent to updateMatch:', updatedMatch);
             await updateMatchGroup(matchId, updatedMatch);
-
-            // Update matches and re-fetch to ensure sorting
-            await fetchMatches(); // Re-fetch matches to ensure correct sorting after update
-
+            await fetchMatches();
             setEditingMatchId(null);
             setEditingCluster(null);
         } catch (error) {
@@ -124,6 +143,10 @@ const GroupStage = ({ tournament }) => {
         setEditForm(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
     const handleCancel = () => {
         setEditingMatchId(null);
         setEditingCluster(null);
@@ -132,7 +155,7 @@ const GroupStage = ({ tournament }) => {
     if (loading) {
         return <LoadingScreen message="Loading matches..." />;
     }
-    
+
     const groupedMatches = groupMatches();
     if (Object.keys(groupedMatches).length === 0) {
         return (
@@ -144,9 +167,18 @@ const GroupStage = ({ tournament }) => {
 
     return (
         <div className="p-6 bg-gradient-to-b from-gray-900 to-black min-h-screen">
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-10 text-center tracking-wide">
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-6 text-center tracking-wide">
                 Group Stage
             </h1>
+            <div className="max-w-5xl mx-auto mb-8">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    placeholder="Search by team, venue, or time (e.g., 14:00)"
+                    className="w-full bg-gray-800/80 text-white rounded-lg p-3 text-sm border border-gray-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner placeholder-gray-400"
+                />
+            </div>
             <div className="space-y-12 max-w-5xl mx-auto">
                 {Object.entries(groupedMatches).map(([groupName, groupMatches]) => (
                     <div
