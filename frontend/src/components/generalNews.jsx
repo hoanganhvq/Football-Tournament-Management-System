@@ -107,8 +107,7 @@ const GeneralNews = ({ tournament }) => {
         setLoading(true);
         try {
             console.log("Data: ", tournament);
-            if(tournament.format === "Group Stage"){
-                await  fetchDataEndTournament();
+           
                 const updateStatusData = {
                     ...tournament,
                     status: 'Ended',
@@ -116,16 +115,7 @@ const GeneralNews = ({ tournament }) => {
                 const updatedTournament = await updateTournament(tournament._id, updateStatusData);
                 setTournamentStatus("Ended");
                 alert("Tournament has been successfully ended!");
-            } else {
-                
-                const updateStatusData = {
-                    ...tournament,
-                    status: 'Ended',
-                };
-                const updatedTournament = await updateTournament(tournament._id, updateStatusData);
-                setTournamentStatus("Ended");
-                alert("Tournament has been successfully ended!");
-            }
+    
          
     
         } catch (error) {
@@ -145,13 +135,7 @@ const GeneralNews = ({ tournament }) => {
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
         console.log("Chay useEffect");
-        if (tournament.status === "Ended") {
-            if (tournament.format === "Group Stage") {
-                fetchDataEndTournament();
-            } else if (tournament.format === "Round Robin") {
-                return;
-            }
-        }
+    
     }, [tournament._id, tournament.status, tournament.format]);
 
     if (!state || loading) {
