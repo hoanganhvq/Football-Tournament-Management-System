@@ -68,6 +68,7 @@ const GeneralNews = ({ tournament }) => {
     };
     const fetchDataEndTournament = async()=>{
         setLoading(true);
+        console.log("Chay ham fetchDataEnd ")
         try{
             const [_, finalAndThirdMatch] = await Promise.all([
                 fetchData(),
@@ -137,7 +138,7 @@ const GeneralNews = ({ tournament }) => {
         fetchData();
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
-        if(tournament.status === "Ended"){
+        if(tournament.status === "Ended" && tournament.format === "Group Stage"){
             fetchDataEndTournament();
         }
     }, [tournament._id]);
