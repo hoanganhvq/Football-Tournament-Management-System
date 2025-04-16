@@ -65,7 +65,7 @@ const GroupStage = ({ tournament }) => {
         setEditingCluster(cluster);
         const matchDate = new Date(match.matchDate);
         const matchTime = new Date(match.matchTime);
-        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000); // +7 hours (UTC+7)
+        const adjustedTime = new Date(matchTime.getTime() + 7 * 60 * 60 * 1000); 
         setEditForm({
             scoreTeam1: match.scoreTeam1 || 0,
             scoreTeam2: match.scoreTeam2 || 0,
@@ -75,7 +75,7 @@ const GroupStage = ({ tournament }) => {
             redCardsTeam2: match.redCardsTeam2 || 0,
             venue: match.matchVenue || '',
             date: matchDate.toISOString().split('T')[0],
-            time: adjustedTime.toISOString().substr(11, 5), // HH:MM
+            time: adjustedTime.toISOString().substr(11, 5), 
         });
     };
 

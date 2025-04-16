@@ -151,7 +151,7 @@ const TournamentInformation = () => {
           <img
             src={tournament.logo}
             alt="Tournament Banner"
-            className="w-full h-96 object-cover border-b-4 border-blue-500 shadow-xl" // Tăng từ h-80 lên h-96
+            className="w-full h-96 object-cover border-b-4 border-blue-500 shadow-xl"
           />
           <h1 className="mt-6 text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase tracking-tight py-4">
             {tournament.name}
@@ -251,8 +251,12 @@ const TournamentInformation = () => {
                   <tbody>
                     {teams.map((team, index) => (
                       <tr
-                        key={index}
-                        className="border-t border-gray-600/30 hover:bg-blue-500/20 transition-all duration-200"
+                        key={team._id || index} 
+                        onClick={() => navigate(`/club/${team._id}`)} 
+                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/team/${team._id}`)} // Keyboard accessibility
+                        className="border-t border-gray-600/30 hover:bg-blue-500/20 transition-all duration-200 cursor-pointer"
+                        role="button"
+                        tabIndex={0}
                       >
                         <td className="px-6 py-4 text-gray-200 flex items-center gap-2">
                           {team.logo && <img src={team.logo} alt="Team Logo" className="w-8 h-8 rounded-full" />}

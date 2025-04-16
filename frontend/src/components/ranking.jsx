@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { getGroups, createGroup, createGroupMatches } from '../api/groupAPI';
 import { updateTournament, getTournamentById } from '../api/tounamentAPI';
 import LoadingScreen from '../pages/loadingScreen';
@@ -14,8 +15,10 @@ const Ranking = ({ tournament: initialTournament }) => {
         Array.from({ length: numberOfGroups }, () => [])
     );
     const [groupInfo, setGroupInfo] = useState([]);
-
     const [currentUserId, setCurrentUserId] = useState(null);
+
+    const navigate = useNavigate(); // Initialize navigate hook
+
     // Fetch the latest tournament from the server
     const fetchTournament = async () => {
         try {
@@ -62,7 +65,6 @@ const Ranking = ({ tournament: initialTournament }) => {
     // Mark tournament as grouped and matches created
     const markTournamentAsGrouped = async () => {
         try {
-            
             await updateTournament(tournament._id, { 
                 is_Divided_Group: true, 
                 isGroupMatchesCreated: true 
@@ -80,10 +82,8 @@ const Ranking = ({ tournament: initialTournament }) => {
         const newGrouped = Array.from({ length: numberOfGroups }, () => []);
 
         if (tournament.format === "Round Robin") {
-            // Round-Robin: all teams in one group
             newGrouped[0] = shuffledTeams;
         } else {
-            // Group Stage: distribute teams evenly across groups
             shuffledTeams.forEach((team, index) => {
                 newGrouped[index % numberOfGroups].push(team);
             });
@@ -112,9 +112,9 @@ const Ranking = ({ tournament: initialTournament }) => {
     const handleCreateMatches = async () => {
         try {
             setLoading(true);
-            await createGroupMatches(groupInfo); // Assumes API handles Round-Robin and Group Stage logic
+            await createGroupMatches(groupInfo);
             await markTournamentAsGrouped();
-            await fetchGroups(); // Refresh data after creating matches
+            await fetchGroups();
         } catch (error) {
             console.error("Error creating matches:", error);
         } finally {
@@ -136,10 +136,16 @@ const Ranking = ({ tournament: initialTournament }) => {
             : `${String.fromCharCode(65 + groupIndex)}${teamIndex + 1}`;
         const barWidth = Math.min(100, (team.points || 0) * 5);
 
+        
+        const handleTeamClick = () => {
+            navigate(`/club/${team._id}`); 
+        };
+
         return (
             <tr
                 key={team._id}
-                className={`border-b border-gray-700 hover:bg-gray-700/30 transition duration-300 transform hover:scale-101 ${teamIndex % 2 === 0 ? 'bg-gray-900/10' : ''} ${isTop1 ? 'border-2 border-yellow-400 bg-yellow-200/5' : ''}`}
+                onClick={handleTeamClick} 
+                className={`border-b border-gray-700 hover:bg-gray-700/30 transition duration-300 transform hover:scale-101 cursor-pointer ${teamIndex % 2 === 0 ? 'bg-gray-900/10' : ''} ${isTop1 ? 'border-2 border-yellow-400 bg-yellow-200/5' : ''}`}
             >
                 <td className="py-4 flex items-center">
                     <span className="text-sm text-gray-400 mr-3">{rankLabel}</span>
@@ -168,7 +174,7 @@ const Ranking = ({ tournament: initialTournament }) => {
         );
     };
 
-    const isAdmin = currentUserId === tournament.createdBy ;
+    const isAdmin = currentUserId === tournament.createdBy;
     if (loading) {
         return <LoadingScreen message="Loading..." />;
     }
@@ -182,7 +188,7 @@ const Ranking = ({ tournament: initialTournament }) => {
                 <h3 className="text-2xl font-semibold mb-6 text-center text-gray-300 animate-slide-in">
                     {tournament.format === 'Round Robin' ? 'Ranking' : 'Group Stage'}
                 </h3>
-                {!isTableCreated && isAdmin && tournament.teams.length > 2 &&(
+                {!isTableCreated && isAdmin && tournament.teams.length > 2 && (
                     <div className="text-center mb-6">
                         <button
                             onClick={handleGroupTeams}

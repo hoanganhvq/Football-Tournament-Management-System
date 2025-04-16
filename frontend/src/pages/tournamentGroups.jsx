@@ -219,7 +219,7 @@ const TournamentDetails = () => {
 
                                 {/* Location & Time */}
                                 <div className="text-center mt-2 text-gray-400 text-sm">
-                                    📍 <span className="font-medium text-white">{tournament.location}</span>
+                                    📍 <span className="font-medium text-white">{tournamen.location}</span>
                                 </div>
                                 <div className="text-center text-gray-400 text-sm">
                                     🗓 <span className="font-medium text-white">
