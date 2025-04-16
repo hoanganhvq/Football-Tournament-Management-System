@@ -103,7 +103,9 @@ const GeneralNews = ({ tournament }) => {
     const handleEndTournament = async () => {
         setLoading(true);
         try {
-            if(tournament.format === "Round Robin"){
+            console.log("Data: ", tournament);
+            if(tournament.format === "Group Stage"){
+                await  fetchDataEndTournament();
                 const updateStatusData = {
                     ...tournament,
                     status: 'Ended',
@@ -112,7 +114,7 @@ const GeneralNews = ({ tournament }) => {
                 setTournamentStatus("Ended");
                 alert("Tournament has been successfully ended!");
             } else {
-                await  fetchDataEndTournament();
+                
                 const updateStatusData = {
                     ...tournament,
                     status: 'Ended',
