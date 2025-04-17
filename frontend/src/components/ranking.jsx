@@ -124,6 +124,7 @@ const Ranking = ({ tournament: initialTournament }) => {
 
     useEffect(() => {
         fetchTournament();
+
         fetchGroups();
         const user = localStorage.getItem('user');
         setCurrentUserId(user ? JSON.parse(user).id : null);
@@ -189,7 +190,7 @@ const Ranking = ({ tournament: initialTournament }) => {
                 <h3 className="text-2xl font-semibold mb-6 text-center text-gray-300 animate-slide-in">
                     {tournament.format === 'Round Robin' ? 'Ranking' : 'Group Stage'}
                 </h3>
-                {!isTableCreated && isAdmin && tournament.teams.length > 2 && (
+                {!isTableCreated && isAdmin && tournament.teams.length > 2 && tournament.status !== "Ended"&&(
                     <div className="text-center mb-6">
                         <button
                             onClick={handleGroupTeams}
